@@ -9,8 +9,14 @@ from core.config import get_settings
 from core.exceptions import AppException
 from features.auth.routes import router as auth_router
 from features.company.routes import router as company_router
+from features.logging.logger import setup_logging, get_logger
+from features.logging.middleware import LoggingMiddleware, ExceptionLoggingMiddleware
 # Import models to ensure they're registered with SQLAlchemy
 from features.company.models import Company  # noqa: F401
+
+# Initialize logging FIRST (before anything else)
+setup_logging()
+logger = get_logger(__name__)
 
 settings = get_settings()
 
@@ -19,12 +25,12 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
     """Application lifespan - startup and shutdown events."""
     # Startup
-    print("Starting up application...")
+    logger.info("Starting up application...")
     await init_db()
-    print("Database initialized")
+    logger.info("Database initialized")
     yield
     # Shutdown
-    print("Shutting down application...")
+    logger.info("Shutting down application...")
 
 
 # Create FastAPI app
@@ -33,6 +39,10 @@ app = FastAPI(
     debug=settings.DEBUG,
     lifespan=lifespan,
 )
+
+# Add logging middleware (FIRST - outermost)
+app.add_middleware(ExceptionLoggingMiddleware)
+app.add_middleware(LoggingMiddleware)
 
 # CORS middleware
 app.add_middleware(
@@ -48,6 +58,10 @@ app.add_middleware(
 @app.exception_handler(AppException)
 async def app_exception_handler(request: Request, exc: AppException):
     """Handle application exceptions."""
+    logger.warning(
+        f"AppException: {exc.code} - {exc.message} | "
+        f"Path: {request.url.path}"
+    )
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content={
@@ -63,19 +77,11 @@ async def app_exception_handler(request: Request, exc: AppException):
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """Handle Pydantic validation errors with detailed logging."""
-    # Log validation errors for debugging
-    print(f"\n[VALIDATION ERROR] Path: {request.url.path}")
-    print(f"[VALIDATION ERROR] Method: {request.method}")
-    print(f"[VALIDATION ERROR] Errors:")
-    for error in exc.errors():
-        print(f"  - Field: {error['loc']}, Error: {error['msg']}, Type: {error['type']}")
-
-    # Log request body if available
-    try:
-        body = await request.body()
-        print(f"[VALIDATION ERROR] Request body: {body.decode()}")
-    except Exception as e:
-        print(f"[VALIDATION ERROR] Could not read request body: {e}")
+    # Log validation errors
+    logger.warning(
+        f"Validation Error | Path: {request.url.path} | "
+        f"Errors: {exc.errors()}"
+    )
 
     # Return standard 422 response
     return JSONResponse(
