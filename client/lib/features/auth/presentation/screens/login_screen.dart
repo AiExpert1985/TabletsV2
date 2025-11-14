@@ -38,19 +38,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
-    // Show error dialog if error occurred
+    // Show error snackbar if error occurred
     ref.listen<AuthState>(authProvider, (previous, next) {
       if (next is AuthError) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.message),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
-        // Clear error after showing
-        Future.delayed(const Duration(seconds: 3), () {
-          ref.read(authProvider.notifier).clearError();
-        });
+        // Clear error immediately (user can retry)
+        ref.read(authProvider.notifier).clearError();
       }
     });
 
