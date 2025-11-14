@@ -11,8 +11,10 @@ from features.auth.schemas import (
     UserResponse,
     MessageResponse,
 )
+from features.auth.models import User
 from features.auth.services import AuthService
 from features.auth.dependencies import get_auth_service, CurrentUser
+from features.authorization.service import create_authorization_service
 from core.exceptions import (
     AppException,
     PhoneAlreadyExistsException,
@@ -23,6 +25,39 @@ from core.exceptions import (
 )
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+# ============================================================================
+# Helper Functions
+# ============================================================================
+
+def build_user_response(user: User) -> UserResponse:
+    """
+    Build UserResponse with calculated permissions.
+
+    Args:
+        user: User model
+
+    Returns:
+        UserResponse with permissions populated
+    """
+    # Calculate permissions for the user
+    auth_service = create_authorization_service(user)
+    permissions = auth_service.get_permission_list()
+
+    return UserResponse(
+        id=str(user.id),
+        phone_number=user.phone_number,
+        email=user.email,
+        company_id=str(user.company_id) if user.company_id else None,
+        role=user.role.value,
+        company_roles=user.company_roles,
+        permissions=permissions,
+        is_active=user.is_active,
+        is_phone_verified=user.is_phone_verified,
+        created_at=user.created_at,
+        last_login_at=user.last_login_at,
+    )
 
 
 # ============================================================================
@@ -98,17 +133,7 @@ async def signup(
         )
 
         return SignupResponse(
-            user=UserResponse(
-                id=str(user.id),
-                phone_number=user.phone_number,
-                email=user.email,
-                company_id=str(user.company_id) if user.company_id else None,
-                role=user.role.value,
-                is_active=user.is_active,
-                is_phone_verified=user.is_phone_verified,
-                created_at=user.created_at,
-                last_login_at=user.last_login_at,
-            ),
+            user=build_user_response(user),
             tokens=TokenResponse(
                 access_token=tokens.access_token,
                 refresh_token=tokens.refresh_token,
@@ -140,17 +165,7 @@ async def login(
         )
 
         return LoginResponse(
-            user=UserResponse(
-                id=str(user.id),
-                phone_number=user.phone_number,
-                email=user.email,
-                company_id=str(user.company_id) if user.company_id else None,
-                role=user.role.value,
-                is_active=user.is_active,
-                is_phone_verified=user.is_phone_verified,
-                created_at=user.created_at,
-                last_login_at=user.last_login_at,
-            ),
+            user=build_user_response(user),
             tokens=TokenResponse(
                 access_token=tokens.access_token,
                 refresh_token=tokens.refresh_token,
@@ -208,16 +223,6 @@ async def get_current_user(current_user: CurrentUser):
     Requires valid access token in Authorization header:
     `Authorization: Bearer <access_token>`
     """
-    return UserResponse(
-        id=str(current_user.id),
-        phone_number=current_user.phone_number,
-        email=current_user.email,
-        company_id=str(current_user.company_id) if current_user.company_id else None,
-        role=current_user.role.value,
-        is_active=current_user.is_active,
-        is_phone_verified=current_user.is_phone_verified,
-        created_at=current_user.created_at,
-        last_login_at=current_user.last_login_at,
-    )
+    return build_user_response(current_user)
 
 

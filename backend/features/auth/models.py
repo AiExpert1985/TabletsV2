@@ -1,8 +1,9 @@
 """SQLAlchemy ORM models for authentication."""
 import uuid
+import json
 from datetime import datetime, timezone
-from sqlalchemy import Boolean, String, DateTime, ForeignKey, Index, TypeDecorator, Enum
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy import Boolean, String, DateTime, ForeignKey, Index, TypeDecorator, Enum, Text
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSON as PG_JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from core.database import Base
 import enum
@@ -50,6 +51,43 @@ class UUID(TypeDecorator):
         return uuid.UUID(value)
 
 
+class JSONList(TypeDecorator):
+    """Platform-independent JSON list type.
+
+    Uses PostgreSQL's JSON type when available, otherwise uses TEXT for SQLite.
+    Stores lists as JSON strings.
+    """
+    impl = Text
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == 'postgresql':
+            return dialect.type_descriptor(PG_JSON)
+        else:
+            return dialect.type_descriptor(Text)
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        if dialect.name == 'postgresql':
+            return value  # PostgreSQL handles JSON natively
+        else:
+            # For SQLite: store as JSON string
+            return json.dumps(value)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return []  # Default to empty list
+        if dialect.name == 'postgresql':
+            return value if isinstance(value, list) else []
+        else:
+            # For SQLite: parse JSON string
+            try:
+                return json.loads(value) if value else []
+            except (json.JSONDecodeError, TypeError):
+                return []
+
+
 class User(Base):
     """User model."""
 
@@ -74,6 +112,13 @@ class User(Base):
     role: Mapped[UserRole] = mapped_column(
         Enum(UserRole, native_enum=False, length=50),
         default=UserRole.USER,
+        nullable=False
+    )
+
+    # Authorization: Multiple company roles for granular permissions
+    company_roles: Mapped[list[str]] = mapped_column(
+        JSONList,
+        default=list,
         nullable=False
     )
 

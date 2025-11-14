@@ -60,6 +60,8 @@ class UserResponse(BaseModel):
     email: str | None = None
     company_id: str | None = None  # NULL for system_admin
     role: str  # "system_admin", "company_admin", or "user"
+    company_roles: list[str] = []  # List of company roles for granular permissions
+    permissions: list[str] = []  # List of aggregated permissions
     is_active: bool
     is_phone_verified: bool
     created_at: datetime

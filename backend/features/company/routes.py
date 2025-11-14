@@ -3,8 +3,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.dependencies import get_db
-from core.authorization import require_system_admin
 from features.auth.dependencies import CurrentUser
+from features.authorization.dependencies import require_permission
+from features.authorization.permissions import Permission
 from features.company.schemas import (
     CompanyCreateRequest,
     CompanyUpdateRequest,
@@ -24,16 +25,14 @@ def get_company_repository(db: Annotated[AsyncSession, Depends(get_db)]) -> Comp
 @router.post("", response_model=CompanyResponse, status_code=status.HTTP_201_CREATED)
 async def create_company(
     request: CompanyCreateRequest,
-    current_user: CurrentUser,
     company_repo: Annotated[CompanyRepository, Depends(get_company_repository)],
+    _: Annotated[None, Depends(require_permission(Permission.CREATE_COMPANIES))],
 ):
     """
     Create new company (system admin only).
 
     - **name**: Company name (unique)
     """
-    # Check authorization
-    require_system_admin(current_user)
 
     # Check if company name already exists
     existing = await company_repo.get_by_name(request.name)
@@ -57,8 +56,8 @@ async def create_company(
 
 @router.get("", response_model=list[CompanyResponse])
 async def get_companies(
-    current_user: CurrentUser,
     company_repo: Annotated[CompanyRepository, Depends(get_company_repository)],
+    _: Annotated[None, Depends(require_permission(Permission.VIEW_COMPANIES))],
     skip: int = 0,
     limit: int = 100,
 ):
@@ -67,8 +66,6 @@ async def get_companies(
 
     Supports pagination with skip/limit.
     """
-    # Check authorization
-    require_system_admin(current_user)
 
     companies = await company_repo.get_all(skip=skip, limit=limit)
 
@@ -87,14 +84,12 @@ async def get_companies(
 @router.get("/{company_id}", response_model=CompanyResponse)
 async def get_company(
     company_id: str,
-    current_user: CurrentUser,
     company_repo: Annotated[CompanyRepository, Depends(get_company_repository)],
+    _: Annotated[None, Depends(require_permission(Permission.VIEW_COMPANIES))],
 ):
     """
     Get company by ID (system admin only).
     """
-    # Check authorization
-    require_system_admin(current_user)
 
     company = await company_repo.get_by_id(company_id)
     if not company:
@@ -116,8 +111,8 @@ async def get_company(
 async def update_company(
     company_id: str,
     request: CompanyUpdateRequest,
-    current_user: CurrentUser,
     company_repo: Annotated[CompanyRepository, Depends(get_company_repository)],
+    _: Annotated[None, Depends(require_permission(Permission.EDIT_COMPANIES))],
 ):
     """
     Update company (system admin only).
@@ -126,8 +121,6 @@ async def update_company(
     - **name**: Company name
     - **is_active**: Active status
     """
-    # Check authorization
-    require_system_admin(current_user)
 
     # Check if company exists
     company = await company_repo.get_by_id(company_id)
@@ -171,16 +164,14 @@ async def update_company(
 @router.delete("/{company_id}", response_model=MessageResponse)
 async def delete_company(
     company_id: str,
-    current_user: CurrentUser,
     company_repo: Annotated[CompanyRepository, Depends(get_company_repository)],
+    _: Annotated[None, Depends(require_permission(Permission.DELETE_COMPANIES))],
 ):
     """
     Delete company (system admin only).
 
     WARNING: This will also delete all users belonging to this company (cascade delete).
     """
-    # Check authorization
-    require_system_admin(current_user)
 
     # Check if company exists
     company = await company_repo.get_by_id(company_id)
