@@ -47,10 +47,11 @@ def normalize_phone_number(phone: str) -> str:
         number = '964' + cleaned
 
     # Validate final format
-    if not re.match(r'^964[3-9]\d{8}$', number):
+    # Iraqi mobile: +964 7XX XXX XXXX (always starts with 7, then operator code 3-9)
+    if not re.match(r'^9647[3-9]\d{7}$', number):
         raise ValueError(
             "Invalid Iraqi phone number. Expected format: 07XX XXX XXXX "
-            "(where XX can be 3-9)"
+            "(7X where X can be 3-9, e.g., 0750, 0770, 0780)"
         )
 
     return '+' + number

@@ -28,8 +28,8 @@ class PhoneValidator {
   static bool isValid(String phone) {
     try {
       final normalized = normalize(phone);
-      // Check format: +964[3-9]XXXXXXXX (10 digits after country code)
-      return RegExp(r'^\+964[3-9]\d{8}$').hasMatch(normalized);
+      // Check format: +964 7XX XXX XXXX (always starts with 7, then operator 3-9)
+      return RegExp(r'^\+9647[3-9]\d{7}$').hasMatch(normalized);
     } catch (e) {
       return false;
     }
