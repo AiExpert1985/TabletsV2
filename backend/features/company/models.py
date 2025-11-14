@@ -37,6 +37,11 @@ class Company(Base):
         back_populates="company",
         foreign_keys="User.company_id"
     )
+    products: Mapped[list["Product"]] = relationship(
+        "Product",
+        back_populates="company",
+        cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Company {self.name}>"

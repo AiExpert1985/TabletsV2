@@ -9,10 +9,12 @@ from core.config import get_settings
 from core.exceptions import AppException
 from features.auth.routes import router as auth_router
 from features.company.routes import router as company_router
+from features.product.routes import router as product_router
 from features.logging.logger import setup_logging, get_logger
 from features.logging.middleware import LoggingMiddleware, ExceptionLoggingMiddleware
 # Import models to ensure they're registered with SQLAlchemy
 from features.company.models import Company  # noqa: F401
+from features.product.models import Product  # noqa: F401
 
 # Initialize logging FIRST (before anything else)
 setup_logging()
@@ -93,6 +95,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 # Include routers
 app.include_router(auth_router)
 app.include_router(company_router)
+app.include_router(product_router)
 
 
 # Health check endpoint
