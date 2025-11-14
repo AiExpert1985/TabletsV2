@@ -63,7 +63,7 @@ def require_permission(permission: Permission):
                 detail=f"Permission denied: {permission.value} required"
             )
 
-    return Depends(permission_checker)
+    return permission_checker
 
 
 def require_any_permission(*permissions: Permission):
@@ -98,7 +98,7 @@ def require_any_permission(*permissions: Permission):
                 detail=f"Permission denied: requires one of {[p.value for p in permissions]}"
             )
 
-    return Depends(permission_checker)
+    return permission_checker
 
 
 def require_all_permissions(*permissions: Permission):
@@ -133,4 +133,4 @@ def require_all_permissions(*permissions: Permission):
                 detail=f"Permission denied: requires all of {[p.value for p in permissions]}"
             )
 
-    return Depends(permission_checker)
+    return permission_checker
