@@ -7,13 +7,27 @@ class AuthInterceptor implements HttpInterceptor {
 
   AuthInterceptor(this.tokenStorage);
 
+  /// Public endpoints that don't require authentication
+  final List<String> _publicEndpoints = [
+    '/auth/signup',
+    '/auth/login',
+    '/auth/refresh',
+    '/auth/password/request-reset',
+    '/auth/password/reset',
+  ];
+
   @override
   Future<Map<String, dynamic>?> onRequest(
     String path,
     String method,
     Map<String, dynamic>? headers,
   ) async {
-    // Get access token
+    // Skip auth for public endpoints
+    if (_publicEndpoints.any((endpoint) => path.contains(endpoint))) {
+      return headers;
+    }
+
+    // Get access token for protected endpoints
     final token = await tokenStorage.getAccessToken();
 
     if (token != null) {
