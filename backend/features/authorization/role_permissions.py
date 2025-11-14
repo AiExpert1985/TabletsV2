@@ -2,9 +2,9 @@
 Role-to-Permission mappings (Single Source of Truth).
 
 This file defines what permissions each role has.
-Immutable configuration for authorization rules.
+Uses PermissionGroups for type-safety and easier maintenance.
 """
-from features.authorization.permissions import Permission, CompanyRole
+from features.authorization.permissions import Permission, CompanyRole, PermissionGroups
 from features.auth.models import UserRole
 
 
@@ -13,109 +13,52 @@ from features.auth.models import UserRole
 # ============================================================================
 
 COMPANY_ROLE_PERMISSIONS: dict[CompanyRole, set[Permission]] = {
-    # Company Admin: Full access within company (but cannot create users)
-    CompanyRole.ADMIN: {
-        Permission.VIEW_USERS,
-        Permission.EDIT_USERS,
-        # NOTE: Cannot create/delete users (system admin only)
-
-        Permission.VIEW_PRODUCTS,
-        Permission.CREATE_PRODUCTS,
-        Permission.EDIT_PRODUCTS,
-        Permission.DELETE_PRODUCTS,
-
-        Permission.VIEW_INVOICES,
-        Permission.CREATE_INVOICES,
-        Permission.EDIT_INVOICES,
-        Permission.DELETE_INVOICES,
-
-        Permission.VIEW_PURCHASES,
-        Permission.CREATE_PURCHASES,
-        Permission.EDIT_PURCHASES,
-        Permission.DELETE_PURCHASES,
-
-        Permission.VIEW_WAREHOUSE,
-        Permission.MANAGE_WAREHOUSE,
-
-        Permission.VIEW_REPORTS,
-        Permission.EXPORT_REPORTS,
-        Permission.VIEW_FINANCIALS,
-
-        Permission.VIEW_AUDIT_LOGS,
-    },
+    # Company Admin: Full access within company (but cannot create/delete users)
+    CompanyRole.ADMIN: (
+        PermissionGroups.USER_READ_ONLY  # View users only
+        | {Permission.EDIT_USERS}  # Can edit but not create/delete
+        | PermissionGroups.PRODUCT_MANAGEMENT
+        | PermissionGroups.INVOICE_MANAGEMENT
+        | PermissionGroups.PURCHASE_MANAGEMENT
+        | PermissionGroups.WAREHOUSE_MANAGEMENT
+        | PermissionGroups.FINANCIAL_REPORTING
+        | {Permission.VIEW_AUDIT_LOGS}
+    ),
 
     # Accountant: Financial operations and reports
-    CompanyRole.ACCOUNTANT: {
-        Permission.VIEW_USERS,  # View users only
-
-        Permission.VIEW_PRODUCTS,
-
-        Permission.VIEW_INVOICES,
-        Permission.CREATE_INVOICES,
-        Permission.EDIT_INVOICES,
-
-        Permission.VIEW_PURCHASES,
-        Permission.CREATE_PURCHASES,
-        Permission.EDIT_PURCHASES,
-
-        Permission.VIEW_WAREHOUSE,  # View only
-
-        Permission.VIEW_REPORTS,
-        Permission.EXPORT_REPORTS,
-        Permission.VIEW_FINANCIALS,
-    },
+    CompanyRole.ACCOUNTANT: (
+        PermissionGroups.USER_READ_ONLY
+        | PermissionGroups.PRODUCT_READ_ONLY
+        | PermissionGroups.ACCOUNTING_PERMISSIONS  # Pre-defined accounting set
+    ),
 
     # Sales Manager: Manage sales and invoices
-    CompanyRole.SALES_MANAGER: {
-        Permission.VIEW_USERS,
-
-        Permission.VIEW_PRODUCTS,
-        Permission.CREATE_PRODUCTS,
-        Permission.EDIT_PRODUCTS,
-
-        Permission.VIEW_INVOICES,
-        Permission.CREATE_INVOICES,
-        Permission.EDIT_INVOICES,
-        Permission.DELETE_INVOICES,
-
-        Permission.VIEW_WAREHOUSE,
-
-        Permission.VIEW_REPORTS,
-    },
+    CompanyRole.SALES_MANAGER: (
+        PermissionGroups.USER_READ_ONLY
+        | PermissionGroups.SALES_PERMISSIONS  # Pre-defined sales set
+    ),
 
     # Warehouse Keeper: Manage inventory and warehouse
-    CompanyRole.WAREHOUSE_KEEPER: {
-        Permission.VIEW_PRODUCTS,
-        Permission.CREATE_PRODUCTS,
-        Permission.EDIT_PRODUCTS,
-
-        Permission.VIEW_PURCHASES,
-
-        Permission.VIEW_WAREHOUSE,
-        Permission.MANAGE_WAREHOUSE,
-
-        Permission.VIEW_REPORTS,  # Warehouse reports
-    },
+    CompanyRole.WAREHOUSE_KEEPER: (
+        PermissionGroups.WAREHOUSE_KEEPER_PERMISSIONS  # Pre-defined warehouse set
+    ),
 
     # Salesperson: Create/view invoices only
-    CompanyRole.SALESPERSON: {
-        Permission.VIEW_PRODUCTS,
-
-        Permission.VIEW_INVOICES,
-        Permission.CREATE_INVOICES,
-
-        Permission.VIEW_WAREHOUSE,  # Check stock
-    },
+    CompanyRole.SALESPERSON: (
+        PermissionGroups.PRODUCT_READ_ONLY
+        | {Permission.VIEW_INVOICES, Permission.CREATE_INVOICES}
+        | PermissionGroups.WAREHOUSE_READ_ONLY  # Check stock
+    ),
 
     # Viewer: Read-only access
-    CompanyRole.VIEWER: {
-        Permission.VIEW_USERS,
-        Permission.VIEW_PRODUCTS,
-        Permission.VIEW_INVOICES,
-        Permission.VIEW_PURCHASES,
-        Permission.VIEW_WAREHOUSE,
-        Permission.VIEW_REPORTS,
-    },
+    CompanyRole.VIEWER: (
+        PermissionGroups.USER_READ_ONLY
+        | PermissionGroups.PRODUCT_READ_ONLY
+        | PermissionGroups.INVOICE_READ_ONLY
+        | PermissionGroups.PURCHASE_READ_ONLY
+        | PermissionGroups.WAREHOUSE_READ_ONLY
+        | PermissionGroups.REPORTING_READ_ONLY
+    ),
 }
 
 
@@ -125,46 +68,7 @@ COMPANY_ROLE_PERMISSIONS: dict[CompanyRole, set[Permission]] = {
 
 SYSTEM_ROLE_PERMISSIONS: dict[UserRole, set[Permission]] = {
     # System Admin: ALL permissions (including company management)
-    UserRole.SYSTEM_ADMIN: {
-        # User management
-        Permission.VIEW_USERS,
-        Permission.CREATE_USERS,  # Only system admin
-        Permission.EDIT_USERS,
-        Permission.DELETE_USERS,  # Only system admin
-
-        # Company management (system admin only)
-        Permission.VIEW_COMPANIES,
-        Permission.CREATE_COMPANIES,
-        Permission.EDIT_COMPANIES,
-        Permission.DELETE_COMPANIES,
-
-        # All business operations
-        Permission.VIEW_PRODUCTS,
-        Permission.CREATE_PRODUCTS,
-        Permission.EDIT_PRODUCTS,
-        Permission.DELETE_PRODUCTS,
-
-        Permission.VIEW_INVOICES,
-        Permission.CREATE_INVOICES,
-        Permission.EDIT_INVOICES,
-        Permission.DELETE_INVOICES,
-
-        Permission.VIEW_PURCHASES,
-        Permission.CREATE_PURCHASES,
-        Permission.EDIT_PURCHASES,
-        Permission.DELETE_PURCHASES,
-
-        Permission.VIEW_WAREHOUSE,
-        Permission.MANAGE_WAREHOUSE,
-
-        Permission.VIEW_REPORTS,
-        Permission.EXPORT_REPORTS,
-        Permission.VIEW_FINANCIALS,
-
-        Permission.VIEW_AUDIT_LOGS,
-        Permission.VIEW_SYSTEM_SETTINGS,
-        Permission.EDIT_SYSTEM_SETTINGS,
-    },
+    UserRole.SYSTEM_ADMIN: PermissionGroups.ALL_PERMISSIONS,
 
     # Company Admin and User have no system-level permissions by default
     # They get permissions through their company roles
