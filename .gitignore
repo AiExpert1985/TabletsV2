@@ -76,7 +76,10 @@ yarn-error.log*
 # ===========================
 # Project-specific
 # ===========================
-**/.env*
+**/.env
+**/.env.local
+**/.env.*.local
+!**/.env.example
 
 # ===========================
 # Miscellaneous
