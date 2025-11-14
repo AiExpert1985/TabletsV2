@@ -58,6 +58,8 @@ class UserResponse(BaseModel):
     id: str
     phone_number: str
     email: str | None = None
+    company_id: str | None = None  # NULL for system_admin
+    role: str  # "system_admin", "company_admin", or "user"
     is_active: bool
     is_phone_verified: bool
     created_at: datetime

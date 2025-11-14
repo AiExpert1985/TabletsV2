@@ -14,10 +14,17 @@ from features.auth.models import User, RefreshToken
 class IUserRepository(Protocol):
     """Interface for user repository."""
 
-    async def create(self, phone_number: str, hashed_password: str) -> User: ...
+    async def create(
+        self,
+        phone_number: str,
+        hashed_password: str,
+        company_id: str | None = None,
+        role: str = "user"
+    ) -> User: ...
     async def get_by_phone(self, phone_number: str) -> User | None: ...
     async def get_by_id(self, user_id: str) -> User | None: ...
     async def phone_exists(self, phone_number: str) -> bool: ...
+    async def count_users(self) -> int: ...
     async def update_last_login(self, user_id: str) -> None: ...
     async def update_password(self, user_id: str, hashed_password: str) -> None: ...
 
@@ -49,11 +56,20 @@ class UserRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def create(self, phone_number: str, hashed_password: str) -> User:
-        """Create new user."""
+    async def create(
+        self,
+        phone_number: str,
+        hashed_password: str,
+        company_id: str | None = None,
+        role: str = "user"
+    ) -> User:
+        """Create new user with multi-tenancy support."""
+        from features.auth.models import UserRole
         user = User(
             phone_number=phone_number,
             hashed_password=hashed_password,
+            company_id=uuid.UUID(company_id) if company_id else None,
+            role=UserRole(role),
         )
         self.db.add(user)
         await self.db.flush()
@@ -80,6 +96,14 @@ class UserRepository:
             select(User.id).where(User.phone_number == phone_number)
         )
         return result.first() is not None
+
+    async def count_users(self) -> int:
+        """Count total users in the system."""
+        from sqlalchemy import func
+        result = await self.db.execute(
+            select(func.count(User.id))
+        )
+        return result.scalar() or 0
 
     async def update_last_login(self, user_id: str) -> None:
         """Update user's last login timestamp."""

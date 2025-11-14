@@ -8,6 +8,9 @@ from core.database import init_db
 from core.config import get_settings
 from core.exceptions import AppException
 from features.auth.routes import router as auth_router
+from features.company.routes import router as company_router
+# Import models to ensure they're registered with SQLAlchemy
+from features.company.models import Company  # noqa: F401
 
 settings = get_settings()
 
@@ -83,6 +86,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 # Include routers
 app.include_router(auth_router)
+app.include_router(company_router)
 
 
 # Health check endpoint

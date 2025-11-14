@@ -55,12 +55,16 @@ class AuthService:
         """
         Register new user.
 
+        First user becomes system_admin automatically.
+        Subsequent signups are not allowed (only system_admin can create users).
+
         Returns:
             (User, TokenPair)
 
         Raises:
             PhoneAlreadyExistsException: Phone already registered
             PasswordTooWeakException: Password doesn't meet requirements
+            ValueError: If trying to signup after first user (use admin endpoints)
         """
         # 1. Normalize phone number
         normalized_phone = normalize_phone_number(phone_number)
@@ -69,19 +73,30 @@ class AuthService:
         if await self.user_repo.phone_exists(normalized_phone):
             raise PhoneAlreadyExistsException()
 
-        # 3. Validate password strength
+        # 3. Check if this is the first user
+        user_count = await self.user_repo.count_users()
+
+        if user_count > 0:
+            # After first user, only system_admin can create users via admin endpoints
+            raise ValueError(
+                "Public signup is disabled. Please contact system administrator to create your account."
+            )
+
+        # 4. Validate password strength
         validate_password_strength(password)
 
-        # 4. Hash password
+        # 5. Hash password
         hashed_pw = hash_password(password)
 
-        # 5. Create user
+        # 6. Create first user as system_admin (no company)
         user = await self.user_repo.create(
             phone_number=normalized_phone,
             hashed_password=hashed_pw,
+            company_id=None,  # System admin has no company
+            role="system_admin",
         )
 
-        # 6. Generate tokens
+        # 7. Generate tokens
         tokens = await self._generate_token_pair(user)
 
         return user, tokens
@@ -211,6 +226,8 @@ class AuthService:
             user_id=str(user.id),
             phone_number=user.phone_number,
             is_active=user.is_active,
+            company_id=str(user.company_id) if user.company_id else None,
+            role=user.role.value,
         )
 
         # Create refresh token

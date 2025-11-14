@@ -94,13 +94,21 @@ def validate_password_strength(password: str) -> None:
 # JWT Token Handling
 # ============================================================================
 
-def create_access_token(user_id: str, phone_number: str, is_active: bool) -> str:
-    """Create JWT access token."""
+def create_access_token(
+    user_id: str,
+    phone_number: str,
+    is_active: bool,
+    company_id: str | None = None,
+    role: str = "user"
+) -> str:
+    """Create JWT access token with multi-tenancy support."""
     now = datetime.now(timezone.utc)
     payload = {
         "user_id": user_id,
         "phone_number": phone_number,
         "is_active": is_active,
+        "company_id": company_id,  # NULL for system_admin
+        "role": role,
         "type": "access",
         "iat": now,
         "exp": now + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
