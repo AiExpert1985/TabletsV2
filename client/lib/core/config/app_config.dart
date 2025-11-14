@@ -1,8 +1,8 @@
 /// Application configuration
 class AppConfig {
   /// API base URL
-  /// TODO: Update with your actual API URL
-  static const String baseUrl = 'http://localhost:8000';
+  /// Use 127.0.0.1 for Windows desktop (more reliable than localhost)
+  static const String baseUrl = 'http://127.0.0.1:8000';
 
   /// API endpoints
   static const String authEndpoint = '/auth';
