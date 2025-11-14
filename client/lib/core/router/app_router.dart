@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:client/features/auth/presentation/screens/login_screen.dart';
 import 'package:client/features/auth/presentation/screens/signup_screen.dart';
 import 'package:client/features/auth/presentation/providers/auth_provider.dart';
+import 'package:client/features/auth/presentation/providers/auth_state.dart';
 
 /// App router configuration using go_router
 final routerProvider = Provider<GoRouter>((ref) {
