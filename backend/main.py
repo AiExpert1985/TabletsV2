@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
 from core.database import init_db
 from core.config import get_settings
 from core.exceptions import AppException
@@ -52,6 +53,31 @@ async def app_exception_handler(request: Request, exc: AppException):
                 "message": exc.message,
             }
         },
+    )
+
+
+# Global exception handler for validation errors (422)
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Handle Pydantic validation errors with detailed logging."""
+    # Log validation errors for debugging
+    print(f"\n[VALIDATION ERROR] Path: {request.url.path}")
+    print(f"[VALIDATION ERROR] Method: {request.method}")
+    print(f"[VALIDATION ERROR] Errors:")
+    for error in exc.errors():
+        print(f"  - Field: {error['loc']}, Error: {error['msg']}, Type: {error['type']}")
+
+    # Log request body if available
+    try:
+        body = await request.body()
+        print(f"[VALIDATION ERROR] Request body: {body.decode()}")
+    except Exception as e:
+        print(f"[VALIDATION ERROR] Could not read request body: {e}")
+
+    # Return standard 422 response
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"detail": exc.errors()},
     )
 
 

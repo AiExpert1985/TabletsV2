@@ -100,6 +100,12 @@ async def signup(
     - **password**: Minimum 8 characters, must contain uppercase, lowercase, and digit
     - **password_confirm**: Must match password
     """
+    # DEBUG: Log incoming request
+    print(f"[DEBUG] Signup request received:")
+    print(f"  phone_number: {request.phone_number} (length: {len(request.phone_number)})")
+    print(f"  password length: {len(request.password)}")
+    print(f"  password_confirm length: {len(request.password_confirm)}")
+
     try:
         user, tokens = await auth_service.signup(
             phone_number=request.phone_number,
@@ -124,6 +130,7 @@ async def signup(
             ),
         )
     except Exception as exc:
+        print(f"[DEBUG] Signup error: {type(exc).__name__}: {str(exc)}")
         raise handle_auth_exception(exc)
 
 
