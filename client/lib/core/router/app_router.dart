@@ -49,14 +49,23 @@ final routerProvider = Provider<GoRouter>((ref) {
 });
 
 /// Placeholder home screen
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Home'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+            onPressed: () async {
+              await ref.read(authProvider.notifier).logout();
+            },
+          ),
+        ],
       ),
       body: const Center(
         child: Text('Welcome! You are authenticated.'),
