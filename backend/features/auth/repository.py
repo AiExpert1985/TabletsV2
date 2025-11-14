@@ -1,4 +1,5 @@
 """Repository layer for auth feature - abstracts database operations."""
+import uuid
 from datetime import datetime, timezone
 from typing import Protocol
 from sqlalchemy import select, update
@@ -125,7 +126,7 @@ class RefreshTokenRepository:
     ) -> RefreshToken:
         """Create new refresh token."""
         token = RefreshToken(
-            user_id=user_id,
+            user_id=uuid.UUID(user_id) if isinstance(user_id, str) else user_id,
             token_id=token_id,
             token_hash=token_hash,
             expires_at=expires_at,
@@ -189,7 +190,7 @@ class PasswordResetRepository:
     ) -> PasswordResetToken:
         """Create new password reset token."""
         token = PasswordResetToken(
-            user_id=user_id,
+            user_id=uuid.UUID(user_id) if isinstance(user_id, str) else user_id,
             token_hash=token_hash,
             expires_at=expires_at,
         )
