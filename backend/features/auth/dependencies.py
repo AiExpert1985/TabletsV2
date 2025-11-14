@@ -11,10 +11,8 @@ from features.auth.models import User
 from features.auth.repository import (
     UserRepository,
     RefreshTokenRepository,
-    PasswordResetRepository,
 )
 from features.auth.services import AuthService
-from features.auth.notifications import SMSNotificationService
 
 # HTTP Bearer token scheme
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -34,11 +32,6 @@ def get_refresh_token_repository(db: Annotated[AsyncSession, Depends(get_db)]) -
     return RefreshTokenRepository(db)
 
 
-def get_password_reset_repository(db: Annotated[AsyncSession, Depends(get_db)]) -> PasswordResetRepository:
-    """Get password reset repository."""
-    return PasswordResetRepository(db)
-
-
 # ============================================================================
 # Service Dependencies
 # ============================================================================
@@ -46,16 +39,11 @@ def get_password_reset_repository(db: Annotated[AsyncSession, Depends(get_db)]) 
 def get_auth_service(
     user_repo: Annotated[UserRepository, Depends(get_user_repository)],
     refresh_token_repo: Annotated[RefreshTokenRepository, Depends(get_refresh_token_repository)],
-    password_reset_repo: Annotated[PasswordResetRepository, Depends(get_password_reset_repository)],
 ) -> AuthService:
     """Get auth service with dependencies injected."""
-    # TODO Phase 2: Inject actual notification service from config
-    notification_service = SMSNotificationService()  # For now uses console logging
     return AuthService(
         user_repo=user_repo,
         refresh_token_repo=refresh_token_repo,
-        password_reset_repo=password_reset_repo,
-        notification_service=notification_service,
     )
 
 

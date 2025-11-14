@@ -76,11 +76,6 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan"
     )
-    password_reset_tokens: Mapped[list["PasswordResetToken"]] = relationship(
-        "PasswordResetToken",
-        back_populates="user",
-        cascade="all, delete-orphan"
-    )
 
     def __repr__(self):
         return f"<User {self.phone_number}>"
@@ -124,42 +119,5 @@ class RefreshToken(Base):
         return f"<RefreshToken {self.token_id[:8]}...>"
 
 
-class PasswordResetToken(Base):
-    """Password reset token model - stores hashed tokens."""
-
-    __tablename__ = "password_reset_tokens"
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4
-    )
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
-    )
-    token_hash: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
-    expires_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        index=True
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False
-    )
-    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-
-    # Relationships
-    user: Mapped["User"] = relationship("User", back_populates="password_reset_tokens")
-
-    def __repr__(self):
-        return f"<PasswordResetToken {self.id}>"
-
-
 # Additional indexes for performance
 Index('idx_refresh_tokens_user_expires', RefreshToken.user_id, RefreshToken.expires_at)
-Index('idx_password_reset_user_expires', PasswordResetToken.user_id, PasswordResetToken.expires_at)

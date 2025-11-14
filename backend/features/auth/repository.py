@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from typing import Protocol
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from features.auth.models import User, RefreshToken, PasswordResetToken
+from features.auth.models import User, RefreshToken
 
 
 # ============================================================================
@@ -37,16 +37,6 @@ class IRefreshTokenRepository(Protocol):
     async def revoke(self, token_id: str) -> None: ...
     async def revoke_all_for_user(self, user_id: str) -> None: ...
     async def delete_expired(self) -> int: ...
-
-
-class IPasswordResetRepository(Protocol):
-    """Interface for password reset token repository."""
-
-    async def create(self, user_id: str, token_hash: str, expires_at: datetime) -> PasswordResetToken: ...
-    async def get_valid_token(self, token_hash: str) -> PasswordResetToken | None: ...
-    async def mark_used(self, token_id: str) -> None: ...
-    async def invalidate_all_for_user(self, user_id: str) -> None: ...
-    async def delete_old(self) -> int: ...
 
 
 # ============================================================================
@@ -176,68 +166,3 @@ class RefreshTokenRepository:
         return result.rowcount
 
 
-class PasswordResetRepository:
-    """Password reset token repository implementation."""
-
-    def __init__(self, db: AsyncSession):
-        self.db = db
-
-    async def create(
-        self,
-        user_id: str,
-        token_hash: str,
-        expires_at: datetime
-    ) -> PasswordResetToken:
-        """Create new password reset token."""
-        token = PasswordResetToken(
-            user_id=uuid.UUID(user_id) if isinstance(user_id, str) else user_id,
-            token_hash=token_hash,
-            expires_at=expires_at,
-        )
-        self.db.add(token)
-        await self.db.flush()
-        await self.db.refresh(token)
-        return token
-
-    async def get_valid_token(self, token_hash: str) -> PasswordResetToken | None:
-        """Get valid (not expired, not used) reset token."""
-        now = datetime.now(timezone.utc)
-        result = await self.db.execute(
-            select(PasswordResetToken).where(
-                PasswordResetToken.token_hash == token_hash,
-                PasswordResetToken.expires_at > now,
-                PasswordResetToken.used_at.is_(None)
-            )
-        )
-        return result.scalar_one_or_none()
-
-    async def mark_used(self, token_id: str) -> None:
-        """Mark reset token as used."""
-        await self.db.execute(
-            update(PasswordResetToken)
-            .where(PasswordResetToken.id == token_id)
-            .values(used_at=datetime.now(timezone.utc))
-        )
-
-    async def invalidate_all_for_user(self, user_id: str) -> None:
-        """Invalidate all unused reset tokens for a user (when new reset requested)."""
-        await self.db.execute(
-            update(PasswordResetToken)
-            .where(
-                PasswordResetToken.user_id == user_id,
-                PasswordResetToken.used_at.is_(None)
-            )
-            .values(used_at=datetime.now(timezone.utc))
-        )
-
-    async def delete_old(self) -> int:
-        """Delete old tokens (> 24 hours). Returns count deleted."""
-        from sqlalchemy import delete
-        from datetime import timedelta
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
-        result = await self.db.execute(
-            delete(PasswordResetToken).where(
-                PasswordResetToken.created_at < cutoff
-            )
-        )
-        return result.rowcount

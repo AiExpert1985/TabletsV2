@@ -6,9 +6,7 @@ from features.auth.models import User, RefreshToken
 from features.auth.repository import (
     IUserRepository,
     IRefreshTokenRepository,
-    IPasswordResetRepository,
 )
-from features.auth.notifications import INotificationService
 from core.security import (
     normalize_phone_number,
     hash_password,
@@ -27,8 +25,6 @@ from core.exceptions import (
     AccountDeactivatedException,
     InvalidTokenException,
     UserNotFoundException,
-    ResetTokenInvalidException,
-    ResetTokenExpiredException,
 )
 
 settings = get_settings()
@@ -51,13 +47,9 @@ class AuthService:
         self,
         user_repo: IUserRepository,
         refresh_token_repo: IRefreshTokenRepository,
-        password_reset_repo: IPasswordResetRepository,
-        notification_service: INotificationService | None = None,
     ):
         self.user_repo = user_repo
         self.refresh_token_repo = refresh_token_repo
-        self.password_reset_repo = password_reset_repo
-        self.notification_service = notification_service
 
     async def signup(self, phone_number: str, password: str) -> tuple[User, TokenPair]:
         """
@@ -207,131 +199,6 @@ class AuthService:
         if not user:
             raise UserNotFoundException()
         return user
-
-    async def request_password_reset(self, phone_number: str) -> str:
-        """
-        Request password reset.
-
-        Returns:
-            Reset token (plain text - to be sent via SMS/email)
-
-        Note: Fails silently if phone not found (security: prevent enumeration)
-        """
-        # 1. Normalize phone
-        try:
-            normalized_phone = normalize_phone_number(phone_number)
-        except ValueError:
-            # Invalid phone format - fail silently
-            return ""
-
-        # 2. Get user by phone
-        user = await self.user_repo.get_by_phone(normalized_phone)
-        if not user:
-            # Fail silently - don't reveal if phone exists
-            return ""
-
-        # 3. Invalidate all existing reset tokens for user
-        await self.password_reset_repo.invalidate_all_for_user(str(user.id))
-
-        # 4. Generate reset token (plain UUID)
-        reset_token = str(uuid.uuid4())
-
-        # 5. Hash token for storage
-        token_hash = hash_token(reset_token)
-
-        # 6. Store in DB with 15 min expiry
-        expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
-        await self.password_reset_repo.create(
-            user_id=str(user.id),
-            token_hash=token_hash,
-            expires_at=expires_at,
-        )
-
-        # 7. Send notification (SMS/Email)
-        if self.notification_service:
-            message = f"Your password reset code is: {reset_token}\n\nThis code expires in 15 minutes."
-            await self.notification_service.send(
-                recipient=user.phone_number,
-                message=message,
-            )
-
-        # Return token (for development - in production, only send via SMS/email)
-        # TODO Phase 2: Don't return token, only send via notification
-        return reset_token
-
-    async def reset_password(self, reset_token: str, new_password: str) -> None:
-        """
-        Reset password using reset token.
-
-        Raises:
-            ResetTokenInvalidException: Invalid or already used token
-            ResetTokenExpiredException: Token expired
-            PasswordTooWeakException: Password doesn't meet requirements
-        """
-        # 1. Validate new password
-        validate_password_strength(new_password)
-
-        # 2. Hash token
-        token_hash = hash_token(reset_token)
-
-        # 3. Get valid token from DB
-        db_token = await self.password_reset_repo.get_valid_token(token_hash)
-
-        if not db_token:
-            # Could be invalid, expired, or already used
-            raise ResetTokenInvalidException()
-
-        # 4. Get user
-        user = await self.user_repo.get_by_id(str(db_token.user_id))
-        if not user:
-            raise UserNotFoundException()
-
-        # 5. Hash new password
-        hashed_pw = hash_password(new_password)
-
-        # 6. Update user password
-        await self.user_repo.update_password(str(user.id), hashed_pw)
-
-        # 7. Mark token as used
-        await self.password_reset_repo.mark_used(str(db_token.id))
-
-        # 8. Revoke all refresh tokens (force re-login on all devices)
-        await self.refresh_token_repo.revoke_all_for_user(str(user.id))
-
-    async def change_password(
-        self,
-        user_id: str,
-        old_password: str,
-        new_password: str
-    ) -> None:
-        """
-        Change password (while authenticated).
-
-        Raises:
-            UserNotFoundException: User not found
-            InvalidCredentialsException: Old password incorrect
-            PasswordTooWeakException: New password doesn't meet requirements
-        """
-        # 1. Get user
-        user = await self.user_repo.get_by_id(user_id)
-        if not user:
-            raise UserNotFoundException()
-
-        # 2. Verify old password
-        if not verify_password(old_password, user.hashed_password):
-            raise InvalidCredentialsException()
-
-        # 3. Validate new password
-        validate_password_strength(new_password)
-
-        # 4. Hash new password
-        hashed_pw = hash_password(new_password)
-
-        # 5. Update password
-        await self.user_repo.update_password(user_id, hashed_pw)
-
-        # 6. Revoke all refresh tokens (force re-login)
-        await self.refresh_token_repo.revoke_all_for_user(user_id)
 
     # ========================================================================
     # Private helper methods

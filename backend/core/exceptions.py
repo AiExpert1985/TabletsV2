@@ -68,20 +68,3 @@ class RateLimitExceededException(AppException):
             message=f"Too many attempts. Try again in {retry_after} seconds",
             code="RATE_LIMIT_EXCEEDED"
         )
-
-
-# Password reset exceptions
-class ResetTokenInvalidException(AppException):
-    def __init__(self):
-        super().__init__(
-            message="Invalid or already used reset token",
-            code="RESET_TOKEN_INVALID"
-        )
-
-
-class ResetTokenExpiredException(AppException):
-    def __init__(self):
-        super().__init__(
-            message="Reset token has expired",
-            code="RESET_TOKEN_EXPIRED"
-        )

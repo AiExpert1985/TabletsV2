@@ -119,41 +119,4 @@ class AuthRepositoryImpl implements AuthRepository {
       throw HttpException(message: e.toString());
     }
   }
-
-  @override
-  Future<void> requestPasswordReset(String phoneNumber) async {
-    try {
-      // Normalize phone number
-      final normalized = PhoneValidator.normalize(phoneNumber);
-
-      // Call API
-      await remoteDataSource.requestPasswordReset(normalized);
-    } on HttpException {
-      rethrow;
-    } catch (e) {
-      throw HttpException(message: e.toString());
-    }
-  }
-
-  @override
-  Future<void> resetPassword(String resetToken, String newPassword) async {
-    try {
-      await remoteDataSource.resetPassword(resetToken, newPassword);
-    } on HttpException {
-      rethrow;
-    } catch (e) {
-      throw HttpException(message: e.toString());
-    }
-  }
-
-  @override
-  Future<void> changePassword(String oldPassword, String newPassword) async {
-    try {
-      await remoteDataSource.changePassword(oldPassword, newPassword);
-    } on HttpException {
-      rethrow;
-    } catch (e) {
-      throw HttpException(message: e.toString());
-    }
-  }
 }

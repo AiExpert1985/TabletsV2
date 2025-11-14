@@ -16,13 +16,4 @@ abstract class AuthRepository {
 
   /// Get current authenticated user
   Future<User> getCurrentUser();
-
-  /// Request password reset
-  Future<void> requestPasswordReset(String phoneNumber);
-
-  /// Reset password with token
-  Future<void> resetPassword(String resetToken, String newPassword);
-
-  /// Change password (authenticated)
-  Future<void> changePassword(String oldPassword, String newPassword);
 }

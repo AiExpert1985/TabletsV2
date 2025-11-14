@@ -12,8 +12,6 @@ class AuthInterceptor implements HttpInterceptor {
     '/auth/signup',
     '/auth/login',
     '/auth/refresh',
-    '/auth/password/request-reset',
-    '/auth/password/reset',
   ];
 
   @override

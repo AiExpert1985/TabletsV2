@@ -36,44 +36,6 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str = Field(..., min_length=1)
 
 
-class PasswordResetRequestSchema(BaseModel):
-    """Password reset request."""
-
-    phone_number: str = Field(..., min_length=10, max_length=20)
-
-
-class PasswordResetSchema(BaseModel):
-    """Password reset with token."""
-
-    reset_token: str = Field(..., min_length=1)
-    new_password: str = Field(..., min_length=8, max_length=128)
-    new_password_confirm: str = Field(..., min_length=8, max_length=128)
-
-    @field_validator('new_password_confirm')
-    @classmethod
-    def passwords_match(cls, v, info):
-        """Validate passwords match."""
-        if 'new_password' in info.data and v != info.data['new_password']:
-            raise ValueError('Passwords do not match')
-        return v
-
-
-class ChangePasswordRequest(BaseModel):
-    """Change password request."""
-
-    old_password: str = Field(..., min_length=1, max_length=128)
-    new_password: str = Field(..., min_length=8, max_length=128)
-    new_password_confirm: str = Field(..., min_length=8, max_length=128)
-
-    @field_validator('new_password_confirm')
-    @classmethod
-    def passwords_match(cls, v, info):
-        """Validate passwords match."""
-        if 'new_password' in info.data and v != info.data['new_password']:
-            raise ValueError('Passwords do not match')
-        return v
-
-
 # ============================================================================
 # Response Schemas
 # ============================================================================

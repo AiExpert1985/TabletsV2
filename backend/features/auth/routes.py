@@ -8,9 +8,6 @@ from features.auth.schemas import (
     LoginResponse,
     RefreshTokenRequest,
     TokenResponse,
-    PasswordResetRequestSchema,
-    PasswordResetSchema,
-    ChangePasswordRequest,
     UserResponse,
     MessageResponse,
 )
@@ -23,7 +20,6 @@ from core.exceptions import (
     AccountDeactivatedException,
     PasswordTooWeakException,
     RateLimitExceededException,
-    ResetTokenInvalidException,
 )
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -60,11 +56,6 @@ def handle_auth_exception(exc: Exception) -> HTTPException:
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail={"code": exc.code, "message": exc.message},
             headers={"Retry-After": str(exc.retry_after)},
-        )
-    elif isinstance(exc, ResetTokenInvalidException):
-        return HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": exc.code, "message": exc.message},
         )
     elif isinstance(exc, AppException):
         return HTTPException(
@@ -224,82 +215,3 @@ async def get_current_user(current_user: CurrentUser):
     )
 
 
-@router.post("/password/request-reset", response_model=MessageResponse)
-async def request_password_reset(
-    request: PasswordResetRequestSchema,
-    auth_service: Annotated[AuthService, Depends(get_auth_service)],
-):
-    """
-    Request password reset.
-
-    Sends reset code to registered phone number via SMS (if phone exists).
-    Always returns success message for security (prevent enumeration).
-
-    Note: Phase 1 logs reset token to console. Phase 2 will send via SMS.
-    """
-    try:
-        reset_token = await auth_service.request_password_reset(request.phone_number)
-        # TODO Phase 2: Remove this logging, only send via SMS
-        if reset_token:
-            print(f"[DEV] Password reset token: {reset_token}")
-
-        return MessageResponse(
-            message="If the phone number is registered, a reset code has been sent"
-        )
-    except Exception as exc:
-        # Always return success to prevent enumeration
-        return MessageResponse(
-            message="If the phone number is registered, a reset code has been sent"
-        )
-
-
-@router.post("/password/reset", response_model=MessageResponse)
-async def reset_password(
-    request: PasswordResetSchema,
-    auth_service: Annotated[AuthService, Depends(get_auth_service)],
-):
-    """
-    Reset password using reset token.
-
-    - **reset_token**: Token received via SMS
-    - **new_password**: New password (must meet requirements)
-    - **new_password_confirm**: Must match new_password
-
-    Note: Token valid for 15 minutes and single-use only.
-    """
-    try:
-        await auth_service.reset_password(
-            reset_token=request.reset_token,
-            new_password=request.new_password,
-        )
-        return MessageResponse(message="Password reset successful")
-    except Exception as exc:
-        raise handle_auth_exception(exc)
-
-
-@router.post("/password/change", response_model=MessageResponse)
-async def change_password(
-    request: ChangePasswordRequest,
-    current_user: CurrentUser,
-    auth_service: Annotated[AuthService, Depends(get_auth_service)],
-):
-    """
-    Change password (while authenticated).
-
-    Requires valid access token.
-
-    - **old_password**: Current password
-    - **new_password**: New password (must meet requirements)
-    - **new_password_confirm**: Must match new_password
-
-    Note: All active sessions will be logged out after password change.
-    """
-    try:
-        await auth_service.change_password(
-            user_id=str(current_user.id),
-            old_password=request.old_password,
-            new_password=request.new_password,
-        )
-        return MessageResponse(message="Password changed successfully")
-    except Exception as exc:
-        raise handle_auth_exception(exc)
