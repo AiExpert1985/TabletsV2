@@ -1,7 +1,8 @@
 """FastAPI dependencies for auth feature."""
 from typing import Annotated
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthCredentials
+from fastapi.security import HTTPBearer
+from fastapi.security.http import HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.dependencies import get_db
 from core.security import verify_access_token
@@ -63,7 +64,7 @@ def get_auth_service(
 # ============================================================================
 
 async def get_current_user(
-    credentials: Annotated[HTTPAuthCredentials | None, Depends(bearer_scheme)],
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
     user_repo: Annotated[UserRepository, Depends(get_user_repository)],
 ) -> User:
     """
