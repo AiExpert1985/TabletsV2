@@ -1,38 +1,17 @@
 /// Phone number validator
 class PhoneValidator {
-  /// Normalize phone number to E.164 format
+  /// Normalize phone number - just clean up formatting
   static String normalize(String phone) {
     // Remove all non-digit characters except +
     String cleaned = phone.replaceAll(RegExp(r'[^\d+]'), '');
 
-    // Remove leading + if present
-    cleaned = cleaned.replaceFirst('+', '');
-
-    // Handle different formats
-    String number;
-    if (cleaned.startsWith('964')) {
-      // Already has country code
-      number = cleaned;
-    } else if (cleaned.startsWith('0')) {
-      // Local format: 07501234567 -> 9647501234567
-      number = '964${cleaned.substring(1)}';
-    } else {
-      // Assume missing leading 0: 7501234567 -> 9647501234567
-      number = '964$cleaned';
-    }
-
-    return '+$number';
+    // Return as-is, no validation
+    return cleaned.isNotEmpty ? cleaned : phone;
   }
 
-  /// Validate Iraqi phone number format
+  /// Phone validation disabled - accepts any phone number
   static bool isValid(String phone) {
-    try {
-      final normalized = normalize(phone);
-      // Check format: +964 7XX XXX XXXX (always starts with 7, then operator 3-9)
-      return RegExp(r'^\+9647[3-9]\d{7}$').hasMatch(normalized);
-    } catch (e) {
-      return false;
-    }
+    return phone.isNotEmpty;  // Just check not empty
   }
 
   /// Get validation error message
@@ -41,10 +20,7 @@ class PhoneValidator {
       return 'Phone number is required';
     }
 
-    if (!isValid(phone)) {
-      return 'Invalid Iraqi phone number';
-    }
-
+    // No validation, just check not empty
     return null;
   }
 }

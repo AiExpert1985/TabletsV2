@@ -24,46 +24,20 @@ settings = get_settings()
 
 def normalize_phone_number(phone: str) -> str:
     """
-    Normalize phone number to E.164 format.
+    Normalize phone number - just clean up formatting.
 
-    Input examples: 07501234567, 7501234567, +964 750 123 4567, 964-750-123-4567
-    Output: +9647501234567
+    Accepts any phone number format, removes spaces and special characters.
     """
     # Remove all non-digit characters except +
     cleaned = re.sub(r'[^\d+]', '', phone)
 
-    # Remove leading + if present (we'll add it back)
-    cleaned = cleaned.lstrip('+')
-
-    # Handle different formats
-    if cleaned.startswith('964'):
-        # Already has country code
-        number = cleaned
-    elif cleaned.startswith('0'):
-        # Local format: 07501234567 -> 9647501234567
-        number = '964' + cleaned[1:]
-    else:
-        # Assume missing leading 0: 7501234567 -> 9647501234567
-        number = '964' + cleaned
-
-    # Validate final format
-    # Iraqi mobile: +964 7XX XXX XXXX (always starts with 7, then operator code 3-9)
-    if not re.match(r'^9647[3-9]\d{7}$', number):
-        raise ValueError(
-            "Invalid Iraqi phone number. Expected format: 07XX XXX XXXX "
-            "(7X where X can be 3-9, e.g., 0750, 0770, 0780)"
-        )
-
-    return '+' + number
+    # Just return as-is, no validation
+    return cleaned if cleaned else phone
 
 
 def validate_phone_number(phone: str) -> bool:
-    """Validate if phone number is in correct Iraqi format."""
-    try:
-        normalize_phone_number(phone)
-        return True
-    except ValueError:
-        return False
+    """Phone validation disabled - accepts any phone number."""
+    return True  # Always return True, no validation
 
 
 # ============================================================================
