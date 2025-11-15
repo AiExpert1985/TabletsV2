@@ -6,6 +6,7 @@ import 'package:client/features/auth/presentation/providers/auth_provider.dart';
 import 'package:client/features/auth/presentation/providers/auth_state.dart';
 import 'package:client/features/home/presentation/screens/home_screen.dart';
 import 'package:client/features/product/presentation/screens/product_list_screen.dart';
+import 'package:client/features/user_management/presentation/screens/user_management_screen.dart';
 
 /// App router configuration using go_router
 final routerProvider = Provider<GoRouter>((ref) {
@@ -44,6 +45,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/products',
         name: 'products',
         builder: (context, state) => const ProductListScreen(),
+      ),
+      GoRoute(
+        path: '/user-management',
+        name: 'user-management',
+        builder: (context, state) => const UserManagementScreen(),
       ),
     ],
   );

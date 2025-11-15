@@ -143,12 +143,7 @@ class AppDrawer extends StatelessWidget {
               subtitle: const Text('System Admin Only'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navigate to user management when implemented
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('User management coming soon!'),
-                  ),
-                );
+                context.go('/user-management');
               },
             ),
           ],
