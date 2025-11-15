@@ -3,9 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:client/features/auth/presentation/providers/auth_provider.dart';
 import 'package:client/features/auth/presentation/providers/auth_state.dart';
 import 'package:client/features/home/presentation/screens/home_screen.dart';
-import 'package:dio/dio.dart';
 import 'package:client/core/config/app_config.dart';
-import 'package:client/core/network/dio_client.dart';
 
 class UserManagementScreen extends ConsumerStatefulWidget {
   const UserManagementScreen({super.key});
@@ -32,8 +30,8 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
     });
 
     try {
-      final dio = ref.read(dioClientProvider);
-      final response = await dio.get('${AppConfig.usersEndpoint}');
+      final httpClient = ref.read(httpClientProvider);
+      final response = await httpClient.get(AppConfig.usersEndpoint);
       setState(() {
         users = List<Map<String, dynamic>>.from(response.data);
         isLoading = false;
@@ -68,13 +66,15 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
 
     if (confirm == true) {
       try {
-        final dio = ref.read(dioClientProvider);
-        await dio.delete('${AppConfig.usersEndpoint}/$userId');
+        final httpClient = ref.read(httpClientProvider);
+        await httpClient.delete('${AppConfig.usersEndpoint}/$userId');
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('User deleted successfully')),
         );
         _loadUsers();
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e')),
         );
