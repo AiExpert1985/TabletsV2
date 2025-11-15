@@ -124,6 +124,24 @@ class UserRepository:
             )
         )
 
+    async def get_all(self, skip: int = 0, limit: int = 100) -> list[User]:
+        """Get all users (system admin only)."""
+        result = await self.db.execute(
+            select(User).offset(skip).limit(limit)
+        )
+        return list(result.scalars().all())
+
+    async def update(self, user: User) -> User:
+        """Update user."""
+        await self.db.flush()
+        await self.db.refresh(user)
+        return user
+
+    async def delete(self, user: User) -> None:
+        """Delete user."""
+        await self.db.delete(user)
+        await self.db.flush()
+
 
 class RefreshTokenRepository:
     """Refresh token repository implementation."""
