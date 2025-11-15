@@ -39,8 +39,8 @@ class ProductUpdateRequest(BaseModel):
 
 class ProductResponse(BaseModel):
     """Product response."""
-    id: str
-    company_id: str
+    id: UUID
+    company_id: UUID
     name: str
     sku: str
     description: str | None
