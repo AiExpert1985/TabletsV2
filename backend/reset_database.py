@@ -7,14 +7,23 @@ This script will:
 4. Optionally seed sample data (companies, users, products)
 
 Usage:
+    # Interactive mode (prompts for inputs)
     python reset_database.py
+
+    # Config file mode (uses seed_data.json)
+    python reset_database.py --config seed_data.json
+
+    # Quick reset with config (no confirmations)
+    python reset_database.py --config seed_data.json --yes
 """
 import asyncio
 import sys
+import json
+import argparse
 import uuid
+from pathlib import Path
 from datetime import datetime, timezone
 from decimal import Decimal
-from sqlalchemy import text
 from core.database import AsyncSessionLocal, init_db, engine, Base
 from core.security import hash_password
 from features.auth.models import User, UserRole
@@ -74,36 +83,30 @@ async def create_system_admin(
             raise
 
 
-async def seed_sample_companies() -> list[Company]:
-    """Create sample companies for testing."""
-    companies_data = [
-        {"name": "ACME Corporation", "is_active": True},
-        {"name": "TechStart Solutions", "is_active": True},
-        {"name": "Global Traders Inc", "is_active": True},
-    ]
-
+async def seed_companies_from_config(companies_data: list[dict]) -> dict[str, Company]:
+    """Create companies from config data."""
     async with AsyncSessionLocal() as session:
         try:
-            companies = []
+            companies = {}
             for data in companies_data:
                 company = Company(
                     id=uuid.uuid4(),
                     name=data["name"],
-                    is_active=data["is_active"],
+                    is_active=data.get("is_active", True),
                     created_at=datetime.now(timezone.utc),
                     updated_at=datetime.now(timezone.utc),
                 )
                 session.add(company)
-                companies.append(company)
+                companies[company.name] = company
 
             await session.commit()
 
             # Refresh to get IDs
-            for company in companies:
+            for company in companies.values():
                 await session.refresh(company)
 
-            print(f"✅ Created {len(companies)} sample companies:")
-            for company in companies:
+            print(f"✅ Created {len(companies)} companies:")
+            for company in companies.values():
                 print(f"   - {company.name} (ID: {company.id})")
 
             return companies
@@ -113,52 +116,30 @@ async def seed_sample_companies() -> list[Company]:
             raise
 
 
-async def seed_sample_users(companies: list[Company]) -> list[User]:
-    """Create sample users for testing."""
-    if not companies:
-        print("⚠️  No companies provided, skipping user creation")
-        return []
-
-    # Create users for the first company
-    company = companies[0]
-
-    users_data = [
-        {
-            "phone": "07701111111",
-            "password": "Admin123",
-            "email": "admin@acme.com",
-            "role": UserRole.COMPANY_ADMIN,
-            "company_roles": ["sales", "inventory"],
-        },
-        {
-            "phone": "07702222222",
-            "password": "User123",
-            "email": "sales@acme.com",
-            "role": UserRole.USER,
-            "company_roles": ["sales"],
-        },
-        {
-            "phone": "07703333333",
-            "password": "User123",
-            "email": "inventory@acme.com",
-            "role": UserRole.USER,
-            "company_roles": ["inventory"],
-        },
-    ]
-
+async def seed_users_from_config(
+    users_data: list[dict],
+    companies: dict[str, Company]
+) -> list[User]:
+    """Create users from config data."""
     async with AsyncSessionLocal() as session:
         try:
             users = []
             for data in users_data:
+                # Get company by name
+                company = companies.get(data["company_name"])
+                if not company:
+                    print(f"⚠️  Warning: Company '{data['company_name']}' not found for user {data['phone_number']}")
+                    continue
+
                 user = User(
                     id=uuid.uuid4(),
-                    phone_number=data["phone"],
-                    email=data["email"],
+                    phone_number=data["phone_number"],
+                    email=data.get("email"),
                     hashed_password=hash_password(data["password"]),
                     company_id=company.id,
-                    role=data["role"],
-                    company_roles=data["company_roles"],
-                    is_active=True,
+                    role=UserRole(data.get("role", "user")),
+                    company_roles=data.get("company_roles", []),
+                    is_active=data.get("is_active", True),
                     is_phone_verified=True,
                     created_at=datetime.now(timezone.utc),
                     updated_at=datetime.now(timezone.utc),
@@ -171,7 +152,7 @@ async def seed_sample_users(companies: list[Company]) -> list[User]:
             for user in users:
                 await session.refresh(user)
 
-            print(f"✅ Created {len(users)} sample users for {company.name}:")
+            print(f"✅ Created {len(users)} users:")
             for user in users:
                 print(f"   - {user.phone_number} ({user.role.value}) - {user.email}")
 
@@ -182,78 +163,32 @@ async def seed_sample_users(companies: list[Company]) -> list[User]:
             raise
 
 
-async def seed_sample_products(companies: list[Company]) -> list[Product]:
-    """Create sample products for testing."""
-    if not companies:
-        print("⚠️  No companies provided, skipping product creation")
-        return []
-
-    # Create products for the first company
-    company = companies[0]
-
-    products_data = [
-        {
-            "name": "Laptop - Dell XPS 15",
-            "sku": "DELL-XPS15-001",
-            "description": "High-performance laptop for business",
-            "cost_price": Decimal("800.00"),
-            "selling_price": Decimal("1200.00"),
-            "stock_quantity": 15,
-            "reorder_level": 5,
-        },
-        {
-            "name": "Wireless Mouse",
-            "sku": "MS-WL-001",
-            "description": "Ergonomic wireless mouse",
-            "cost_price": Decimal("10.00"),
-            "selling_price": Decimal("25.00"),
-            "stock_quantity": 50,
-            "reorder_level": 20,
-        },
-        {
-            "name": "USB-C Hub",
-            "sku": "HUB-USBC-001",
-            "description": "7-in-1 USB-C hub with HDMI",
-            "cost_price": Decimal("20.00"),
-            "selling_price": Decimal("45.00"),
-            "stock_quantity": 3,  # Low stock!
-            "reorder_level": 10,
-        },
-        {
-            "name": "Office Chair",
-            "sku": "CHAIR-ERG-001",
-            "description": "Ergonomic office chair with lumbar support",
-            "cost_price": Decimal("150.00"),
-            "selling_price": Decimal("300.00"),
-            "stock_quantity": 8,
-            "reorder_level": 5,
-        },
-        {
-            "name": "Monitor - 27\" 4K",
-            "sku": "MON-27-4K-001",
-            "description": "27-inch 4K UHD monitor",
-            "cost_price": Decimal("300.00"),
-            "selling_price": Decimal("500.00"),
-            "stock_quantity": 12,
-            "reorder_level": 5,
-        },
-    ]
-
+async def seed_products_from_config(
+    products_data: list[dict],
+    companies: dict[str, Company]
+) -> list[Product]:
+    """Create products from config data."""
     async with AsyncSessionLocal() as session:
         try:
             products = []
             for data in products_data:
+                # Get company by name
+                company = companies.get(data["company_name"])
+                if not company:
+                    print(f"⚠️  Warning: Company '{data['company_name']}' not found for product {data['name']}")
+                    continue
+
                 product = Product(
                     id=uuid.uuid4(),
                     company_id=company.id,
                     name=data["name"],
                     sku=data["sku"],
-                    description=data["description"],
-                    cost_price=data["cost_price"],
-                    selling_price=data["selling_price"],
-                    stock_quantity=data["stock_quantity"],
-                    reorder_level=data["reorder_level"],
-                    is_active=True,
+                    description=data.get("description"),
+                    cost_price=Decimal(str(data["cost_price"])),
+                    selling_price=Decimal(str(data["selling_price"])),
+                    stock_quantity=data.get("stock_quantity", 0),
+                    reorder_level=data.get("reorder_level", 10),
+                    is_active=data.get("is_active", True),
                     created_at=datetime.now(timezone.utc),
                     updated_at=datetime.now(timezone.utc),
                 )
@@ -265,7 +200,7 @@ async def seed_sample_products(companies: list[Company]) -> list[Product]:
             for product in products:
                 await session.refresh(product)
 
-            print(f"✅ Created {len(products)} sample products for {company.name}:")
+            print(f"✅ Created {len(products)} products:")
             for product in products:
                 stock_status = "🔴 LOW STOCK" if product.stock_quantity <= product.reorder_level else "✅"
                 print(f"   - {product.name} | Stock: {product.stock_quantity} {stock_status}")
@@ -277,24 +212,25 @@ async def seed_sample_products(companies: list[Company]) -> list[Product]:
             raise
 
 
-async def reset_database(
-    admin_phone: str,
-    admin_password: str,
-    admin_email: str | None = None,
-    seed_sample_data: bool = False
-):
-    """
-    Reset database completely and seed initial data.
+async def reset_database_from_config(config_path: Path):
+    """Reset database using configuration file."""
+    # Load config
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+    except FileNotFoundError:
+        print(f"❌ Config file not found: {config_path}")
+        print(f"\nCreate it by copying the example:")
+        print(f"  cp seed_data.example.json seed_data.json")
+        sys.exit(1)
+    except json.JSONDecodeError as e:
+        print(f"❌ Invalid JSON in config file: {e}")
+        sys.exit(1)
 
-    Args:
-        admin_phone: Phone number for system admin
-        admin_password: Password for system admin
-        admin_email: Optional email for system admin
-        seed_sample_data: Whether to create sample companies, users, and products
-    """
     print("=" * 70)
-    print("DATABASE RESET")
+    print("DATABASE RESET FROM CONFIG")
     print("=" * 70)
+    print(f"Config file: {config_path}")
     print()
 
     # Step 1: Drop all tables
@@ -307,21 +243,38 @@ async def reset_database(
 
     # Step 3: Create system admin
     print("👤 Creating system admin...")
-    await create_system_admin(admin_phone, admin_password, admin_email)
+    admin_config = config.get("system_admin", {})
+    if not admin_config:
+        print("❌ No system_admin found in config file")
+        sys.exit(1)
+
+    await create_system_admin(
+        phone_number=admin_config["phone_number"],
+        password=admin_config["password"],
+        email=admin_config.get("email")
+    )
     print()
 
-    # Step 4: Optionally seed sample data
-    if seed_sample_data:
-        print("🌱 Seeding sample data...")
+    # Step 4: Seed companies
+    companies_data = config.get("companies", [])
+    companies = {}
+    if companies_data:
+        print("🏢 Creating companies...")
+        companies = await seed_companies_from_config(companies_data)
         print()
 
-        companies = await seed_sample_companies()
+    # Step 5: Seed users
+    users_data = config.get("users", [])
+    if users_data and companies:
+        print("👥 Creating users...")
+        await seed_users_from_config(users_data, companies)
         print()
 
-        users = await seed_sample_users(companies)
-        print()
-
-        products = await seed_sample_products(companies)
+    # Step 6: Seed products
+    products_data = config.get("products", [])
+    if products_data and companies:
+        print("📦 Creating products...")
+        await seed_products_from_config(products_data, companies)
         print()
 
     print("=" * 70)
@@ -329,26 +282,22 @@ async def reset_database(
     print("=" * 70)
     print()
     print("System Admin Credentials:")
-    print(f"  Phone:    {admin_phone}")
-    print(f"  Password: {admin_password}")
+    print(f"  Phone:    {admin_config['phone_number']}")
+    print(f"  Password: {admin_config['password']}")
     print()
 
-    if seed_sample_data:
-        print("Sample Data Created:")
-        print("  - 3 companies")
-        print("  - 3 users (for ACME Corporation)")
-        print("  - 5 products (for ACME Corporation)")
-        print()
-        print("Sample Company Admin Login:")
-        print("  Phone:    07701111111")
-        print("  Password: Admin123")
-        print()
-
+    if companies_data:
+        print(f"Created {len(companies)} companies")
+    if users_data:
+        print(f"Created {len(users_data)} users")
+    if products_data:
+        print(f"Created {len(products_data)} products")
+    print()
     print("=" * 70)
 
 
-async def main():
-    """Interactive prompt to reset database."""
+async def reset_database_interactive():
+    """Reset database with interactive prompts."""
     print("=" * 70)
     print("⚠️  WARNING: DATABASE RESET")
     print("=" * 70)
@@ -382,18 +331,11 @@ async def main():
     email = email if email else None
 
     print()
-
-    # Ask about sample data
-    seed_data = input("Create sample data for testing? (yes/no): ")
-    seed_sample_data = seed_data.lower() == 'yes'
-
-    print()
     print("=" * 70)
     print("SUMMARY")
     print("=" * 70)
     print(f"System Admin Phone: {phone}")
     print(f"System Admin Email: {email or 'N/A'}")
-    print(f"Seed Sample Data:   {'Yes' if seed_sample_data else 'No'}")
     print()
 
     final_confirm = input("Proceed with database reset? (yes/no): ")
@@ -402,8 +344,96 @@ async def main():
         sys.exit(0)
 
     print()
-    await reset_database(phone, password, email, seed_sample_data)
+    print("=" * 70)
+    print("DATABASE RESET")
+    print("=" * 70)
+    print()
+
+    # Step 1: Drop all tables
+    await drop_all_tables()
+    print()
+
+    # Step 2: Create tables
+    await create_all_tables()
+    print()
+
+    # Step 3: Create system admin
+    print("👤 Creating system admin...")
+    await create_system_admin(phone, password, email)
+    print()
+
+    print("=" * 70)
+    print("✅ DATABASE RESET COMPLETE!")
+    print("=" * 70)
+    print()
+    print("System Admin Credentials:")
+    print(f"  Phone:    {phone}")
+    print(f"  Password: {password}")
+    print()
+    print("=" * 70)
+
+
+def main():
+    """Main entry point with argument parsing."""
+    parser = argparse.ArgumentParser(
+        description="Reset database and seed initial data",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Interactive mode (prompts for inputs)
+  python reset_database.py
+
+  # Use config file
+  python reset_database.py --config seed_data.json
+
+  # Quick reset with config (skip confirmations)
+  python reset_database.py --config seed_data.json --yes
+
+Config file format:
+  See seed_data.example.json for the expected structure.
+  Copy it to seed_data.json and customize as needed:
+    cp seed_data.example.json seed_data.json
+        """
+    )
+
+    parser.add_argument(
+        '--config',
+        type=Path,
+        help='Path to JSON config file with seed data'
+    )
+
+    parser.add_argument(
+        '--yes', '-y',
+        action='store_true',
+        help='Skip confirmation prompts (use with --config)'
+    )
+
+    args = parser.parse_args()
+
+    # Config file mode
+    if args.config:
+        if args.yes:
+            # Skip confirmation, just run
+            asyncio.run(reset_database_from_config(args.config))
+        else:
+            # Ask for confirmation
+            print("=" * 70)
+            print("⚠️  WARNING: DATABASE RESET")
+            print("=" * 70)
+            print()
+            print("This will DELETE ALL DATA and recreate the database!")
+            print(f"Config file: {args.config}")
+            print()
+            confirm = input("Are you sure you want to continue? (yes/no): ")
+            if confirm.lower() != 'yes':
+                print("Operation cancelled.")
+                sys.exit(0)
+            print()
+            asyncio.run(reset_database_from_config(args.config))
+    else:
+        # Interactive mode
+        asyncio.run(reset_database_interactive())
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

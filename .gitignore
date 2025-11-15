@@ -82,6 +82,10 @@ yarn-error.log*
 **/.env.*.local
 !**/.env.example
 
+# Seed data (contains passwords)
+**/seed_data.json
+!**/seed_data.example.json
+
 # ===========================
 # Miscellaneous
 # ===========================
