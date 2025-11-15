@@ -53,19 +53,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Sign up
-  Future<void> signup(String phoneNumber, String password) async {
-    state = Loading();
-    try {
-      final user = await authRepository.signup(phoneNumber, password);
-      state = Authenticated(user);
-    } on HttpException catch (e) {
-      state = AuthError(_mapErrorMessage(e));
-    } catch (e) {
-      state = AuthError('Signup failed: ${e.toString()}');
-    }
-  }
-
   /// Login
   Future<void> login(String phoneNumber, String password) async {
     state = Loading();
@@ -100,35 +87,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Request password reset
-  Future<void> requestPasswordReset(String phoneNumber) async {
-    try {
-      await authRepository.requestPasswordReset(phoneNumber);
-    } on HttpException catch (e) {
-      throw _mapErrorMessage(e);
-    }
-  }
-
-  /// Reset password
-  Future<void> resetPassword(String resetToken, String newPassword) async {
-    try {
-      await authRepository.resetPassword(resetToken, newPassword);
-    } on HttpException catch (e) {
-      throw _mapErrorMessage(e);
-    }
-  }
-
-  /// Change password
-  Future<void> changePassword(String oldPassword, String newPassword) async {
-    try {
-      await authRepository.changePassword(oldPassword, newPassword);
-      // Force re-login after password change
-      state = Unauthenticated();
-    } on HttpException catch (e) {
-      throw _mapErrorMessage(e);
-    }
-  }
-
   /// Clear error state
   void clearError() {
     if (state is AuthError) {
@@ -138,14 +96,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Map HTTP exception to user-friendly message
   String _mapErrorMessage(HttpException e) {
-    if (e.code == 'PHONE_ALREADY_EXISTS') {
-      return 'Phone number already registered';
-    } else if (e.code == 'INVALID_CREDENTIALS') {
+    if (e.code == 'INVALID_CREDENTIALS') {
       return 'Invalid phone number or password';
     } else if (e.code == 'ACCOUNT_DEACTIVATED') {
       return 'Account has been deactivated';
-    } else if (e.code == 'PASSWORD_TOO_WEAK') {
-      return e.message;
     } else if (e.code == 'RATE_LIMIT_EXCEEDED') {
       return e.message;
     } else if (e is NetworkException) {
