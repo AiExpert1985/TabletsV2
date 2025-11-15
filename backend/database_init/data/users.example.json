@@ -1,0 +1,34 @@
+[
+  {
+    "phone_number": "07701111111",
+    "password": "Admin123",
+    "email": "admin@acme.com",
+    "company_name": "ACME Corporation",
+    "role": "company_admin",
+    "company_roles": ["sales", "inventory", "accounting"]
+  },
+  {
+    "phone_number": "07702222222",
+    "password": "Sales123",
+    "email": "sales@acme.com",
+    "company_name": "ACME Corporation",
+    "role": "user",
+    "company_roles": ["sales"]
+  },
+  {
+    "phone_number": "07703333333",
+    "password": "Inventory123",
+    "email": "inventory@acme.com",
+    "company_name": "ACME Corporation",
+    "role": "user",
+    "company_roles": ["inventory"]
+  },
+  {
+    "phone_number": "07704444444",
+    "password": "Account123",
+    "email": "accounting@acme.com",
+    "company_name": "ACME Corporation",
+    "role": "user",
+    "company_roles": ["accounting"]
+  }
+]

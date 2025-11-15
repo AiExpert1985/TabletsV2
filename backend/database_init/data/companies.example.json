@@ -1,0 +1,14 @@
+[
+  {
+    "name": "ACME Corporation",
+    "is_active": true
+  },
+  {
+    "name": "TechStart Solutions",
+    "is_active": true
+  },
+  {
+    "name": "Global Traders Inc",
+    "is_active": true
+  }
+]
