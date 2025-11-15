@@ -7,6 +7,7 @@ import 'package:client/core/storage/secure_token_storage.dart';
 import 'package:client/features/auth/data/datasources/auth_remote_datasource_impl.dart';
 import 'package:client/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:client/features/auth/domain/repositories/auth_repository.dart';
+import 'package:client/features/auth/domain/services/auth_service.dart';
 import 'package:client/features/auth/presentation/providers/auth_state.dart';
 
 /// Token storage provider
@@ -16,11 +17,8 @@ final tokenStorageProvider = Provider((ref) => SecureTokenStorage());
 final httpClientProvider = Provider((ref) {
   final tokenStorage = ref.watch(tokenStorageProvider);
   final client = DioHttpClient();
-
-  // Add interceptors
   client.addInterceptor(AuthInterceptor(tokenStorage));
   client.addInterceptor(LoggingInterceptor());
-
   return client;
 });
 
@@ -28,25 +26,30 @@ final httpClientProvider = Provider((ref) {
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final httpClient = ref.watch(httpClientProvider);
   final tokenStorage = ref.watch(tokenStorageProvider);
-
   return AuthRepositoryImpl(
     remoteDataSource: AuthRemoteDataSourceImpl(httpClient),
     tokenStorage: tokenStorage,
   );
 });
 
+/// Auth service provider
+final authServiceProvider = Provider<AuthService>((ref) {
+  final repository = ref.watch(authRepositoryProvider);
+  return AuthService(repository);
+});
+
 /// Auth notifier - manages auth state
 class AuthNotifier extends StateNotifier<AuthState> {
-  final AuthRepository authRepository;
+  final AuthService authService;
 
-  AuthNotifier(this.authRepository) : super(Initial()) {
+  AuthNotifier(this.authService) : super(Initial()) {
     _checkAuthStatus();
   }
 
   /// Check if user is already authenticated on app start
   Future<void> _checkAuthStatus() async {
     try {
-      final user = await authRepository.getCurrentUser();
+      final user = await authService.getCurrentUser();
       state = Authenticated(user);
     } catch (e) {
       state = Unauthenticated();
@@ -57,10 +60,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> login(String phoneNumber, String password) async {
     state = Loading();
     try {
-      final user = await authRepository.login(phoneNumber, password);
+      final user = await authService.login(phoneNumber, password);
       state = Authenticated(user);
     } on HttpException catch (e) {
-      state = AuthError(_mapErrorMessage(e));
+      state = AuthError(authService.mapErrorMessage(e));
     } catch (e) {
       state = AuthError('Login failed: ${e.toString()}');
     }
@@ -69,10 +72,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Logout
   Future<void> logout() async {
     try {
-      await authRepository.logout();
+      await authService.logout();
       state = Unauthenticated();
     } catch (e) {
-      // Clear state anyway
       state = Unauthenticated();
     }
   }
@@ -80,7 +82,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Refresh token
   Future<void> refreshToken() async {
     try {
-      final user = await authRepository.refreshToken();
+      final user = await authService.refreshToken();
       state = Authenticated(user);
     } catch (e) {
       state = Unauthenticated();
@@ -93,29 +95,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = Unauthenticated();
     }
   }
-
-  /// Map HTTP exception to user-friendly message
-  String _mapErrorMessage(HttpException e) {
-    if (e.code == 'INVALID_CREDENTIALS') {
-      return 'Invalid phone number or password';
-    } else if (e.code == 'ACCOUNT_DEACTIVATED') {
-      return 'Account has been deactivated';
-    } else if (e.code == 'RATE_LIMIT_EXCEEDED') {
-      return e.message;
-    } else if (e is NetworkException) {
-      return 'No internet connection';
-    } else if (e is TimeoutException) {
-      return 'Request timeout. Please try again.';
-    } else if (e is UnauthorizedException) {
-      return 'Session expired. Please login again.';
-    } else {
-      return e.message;
-    }
-  }
 }
 
 /// Auth provider
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  final repository = ref.watch(authRepositoryProvider);
-  return AuthNotifier(repository);
+  final service = ref.watch(authServiceProvider);
+  return AuthNotifier(service);
 });

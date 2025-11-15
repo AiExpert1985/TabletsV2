@@ -1,11 +1,10 @@
 import 'package:client/core/network/http_exception.dart';
 import 'package:client/core/storage/token_storage.dart';
-import 'package:client/core/utils/validators.dart';
 import 'package:client/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:client/features/auth/domain/entities/user.dart';
 import 'package:client/features/auth/domain/repositories/auth_repository.dart';
 
-/// Auth repository implementation
+/// Auth repository implementation - pure data access
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
   final TokenStorage tokenStorage;
@@ -18,17 +17,9 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<User> signup(String phoneNumber, String password) async {
     try {
-      // Normalize phone number
-      final normalized = PhoneValidator.normalize(phoneNumber);
-
-      // Call API
-      final response = await remoteDataSource.signup(normalized, password);
-
-      // Store tokens
+      final response = await remoteDataSource.signup(phoneNumber, password);
       await tokenStorage.saveAccessToken(response.tokens.accessToken);
       await tokenStorage.saveRefreshToken(response.tokens.refreshToken);
-
-      // Return user entity
       return response.user.toEntity();
     } on HttpException {
       rethrow;
@@ -40,17 +31,9 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<User> login(String phoneNumber, String password) async {
     try {
-      // Normalize phone number
-      final normalized = PhoneValidator.normalize(phoneNumber);
-
-      // Call API
-      final response = await remoteDataSource.login(normalized, password);
-
-      // Store tokens
+      final response = await remoteDataSource.login(phoneNumber, password);
       await tokenStorage.saveAccessToken(response.tokens.accessToken);
       await tokenStorage.saveRefreshToken(response.tokens.refreshToken);
-
-      // Return user entity
       return response.user.toEntity();
     } on HttpException {
       rethrow;
