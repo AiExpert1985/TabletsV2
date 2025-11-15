@@ -23,7 +23,7 @@ class ProductRepository(CompanyAwareRepository[Product]):
         - ensure_company_ownership()
     """
 
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         """Initialize product repository."""
         super().__init__(db, Product)
 

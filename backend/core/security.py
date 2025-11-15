@@ -3,7 +3,7 @@ import re
 import hashlib
 import hmac
 from datetime import datetime, timedelta, timezone
-from typing import Dict
+from typing import Any
 from collections import defaultdict
 import jwt
 import bcrypt
@@ -139,7 +139,7 @@ def create_refresh_token(user_id: str) -> tuple[str, str]:
     return token, token_id
 
 
-def verify_access_token(token: str) -> Dict:
+def verify_access_token(token: str) -> dict[str, Any]:
     """
     Verify and decode access token.
 
@@ -163,7 +163,7 @@ def verify_access_token(token: str) -> Dict:
     return payload
 
 
-def verify_refresh_token(token: str) -> Dict:
+def verify_refresh_token(token: str) -> dict[str, Any]:
     """
     Verify and decode refresh token.
 
@@ -211,9 +211,11 @@ def hash_token(token: str) -> str:
 class RateLimiter:
     """Simple in-memory rate limiter for login attempts."""
 
-    def __init__(self):
+    _attempts: dict[str, list[datetime]]
+
+    def __init__(self) -> None:
         # Store: {phone_number: [(timestamp1, timestamp2, ...)]}
-        self._attempts: Dict[str, list[datetime]] = defaultdict(list)
+        self._attempts = defaultdict(list)
 
     def check_rate_limit(self, phone_number: str) -> None:
         """

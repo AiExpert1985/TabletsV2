@@ -52,7 +52,9 @@ class ICompanyRepository(ABC):
 class CompanyRepository(ICompanyRepository):
     """Company repository implementation."""
 
-    def __init__(self, db: AsyncSession):
+    db: AsyncSession
+
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
     async def create(self, name: str) -> Company:

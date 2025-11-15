@@ -22,7 +22,10 @@ class AuthorizationService:
     - Status-based access control
     """
 
-    def __init__(self, user: User | None):
+    user: User | None
+    _permissions: set[Permission] | None
+
+    def __init__(self, user: User | None) -> None:
         """
         Initialize authorization service for a user.
 
@@ -30,7 +33,7 @@ class AuthorizationService:
             user: Current user (None = no permissions)
         """
         self.user = user
-        self._permissions: set[Permission] | None = None
+        self._permissions = None
 
     @property
     def permissions(self) -> set[Permission]:

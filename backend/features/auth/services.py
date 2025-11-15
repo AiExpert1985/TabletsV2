@@ -1,7 +1,6 @@
 """Business logic for authentication."""
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Protocol
 from features.auth.models import User, RefreshToken
 from features.auth.repository import (
     IUserRepository,
@@ -33,7 +32,12 @@ settings = get_settings()
 class TokenPair:
     """Token pair response."""
 
-    def __init__(self, access_token: str, refresh_token: str):
+    access_token: str
+    refresh_token: str
+    token_type: str
+    expires_in: int
+
+    def __init__(self, access_token: str, refresh_token: str) -> None:
         self.access_token = access_token
         self.refresh_token = refresh_token
         self.token_type = "bearer"
@@ -43,11 +47,14 @@ class TokenPair:
 class AuthService:
     """Authentication service - handles business logic."""
 
+    user_repo: IUserRepository
+    refresh_token_repo: IRefreshTokenRepository
+
     def __init__(
         self,
         user_repo: IUserRepository,
         refresh_token_repo: IRefreshTokenRepository,
-    ):
+    ) -> None:
         self.user_repo = user_repo
         self.refresh_token_repo = refresh_token_repo
 

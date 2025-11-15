@@ -98,7 +98,9 @@ class IRefreshTokenRepository(ABC):
 class UserRepository(IUserRepository):
     """User repository implementation."""
 
-    def __init__(self, db: AsyncSession):
+    db: AsyncSession
+
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
     async def create(
@@ -191,7 +193,9 @@ class UserRepository(IUserRepository):
 class RefreshTokenRepository(IRefreshTokenRepository):
     """Refresh token repository implementation."""
 
-    def __init__(self, db: AsyncSession):
+    db: AsyncSession
+
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
     async def create(
