@@ -5,6 +5,8 @@ import 'package:client/features/auth/presentation/screens/login_screen.dart';
 import 'package:client/features/auth/presentation/screens/signup_screen.dart';
 import 'package:client/features/auth/presentation/providers/auth_provider.dart';
 import 'package:client/features/auth/presentation/providers/auth_state.dart';
+import 'package:client/features/home/presentation/screens/home_screen.dart';
+import 'package:client/features/product/presentation/screens/product_list_screen.dart';
 
 /// App router configuration using go_router
 final routerProvider = Provider<GoRouter>((ref) {
@@ -44,32 +46,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'home',
         builder: (context, state) => const HomeScreen(),
       ),
+      GoRoute(
+        path: '/products',
+        name: 'products',
+        builder: (context, state) => const ProductListScreen(),
+      ),
     ],
   );
 });
-
-/// Placeholder home screen
-class HomeScreen extends ConsumerWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-            onPressed: () async {
-              await ref.read(authProvider.notifier).logout();
-            },
-          ),
-        ],
-      ),
-      body: const Center(
-        child: Text('Welcome! You are authenticated.'),
-      ),
-    );
-  }
-}

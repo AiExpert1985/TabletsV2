@@ -150,17 +150,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         )
                       : const Text('Login', style: TextStyle(fontSize: 16)),
                 ),
-                const SizedBox(height: 16),
-
-                // Sign up link
-                TextButton(
-                  onPressed: authState is Loading
-                      ? null
-                      : () {
-                          context.go('/auth/signup');
-                        },
-                  child: const Text('Don\'t have an account? Sign Up'),
-                ),
               ],
             ),
           ),

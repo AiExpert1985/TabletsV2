@@ -5,7 +5,9 @@ class AppConfig {
   static const String baseUrl = 'http://127.0.0.1:8000';
 
   /// API endpoints
-  static const String authEndpoint = '/auth';
+  static const String authEndpoint = '/api/auth';
+  static const String usersEndpoint = '/api/users';
+  static const String productsEndpoint = '/api/products';
 
   /// Timeout durations
   static const Duration connectTimeout = Duration(seconds: 30);
