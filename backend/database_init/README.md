@@ -22,7 +22,25 @@ database_init/
 
 ## Quick Start
 
-### First Time Setup
+### First Time Setup (Windows)
+
+```batch
+cd backend\database_init
+setup.bat
+python reset.py
+```
+
+### First Time Setup (Linux/Mac)
+
+```bash
+cd backend/database_init
+./setup.sh
+python reset.py
+```
+
+### Manual Setup (All Platforms)
+
+If you prefer to do it manually:
 
 1. **Copy example data files:**
    ```bash
@@ -38,13 +56,8 @@ database_init/
 
 3. **Reset and seed database:**
    ```bash
-   cd backend
-   python database_init/reset.py
-   ```
-
-4. **Start the backend:**
-   ```bash
-   python main.py
+   cd ..
+   python reset.py
    ```
 
 ### During Development
