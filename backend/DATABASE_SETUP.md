@@ -1,60 +1,33 @@
-# Database Setup and Reset
+# Database Setup
 
-**MOVED:** Database initialization has been reorganized.
-
-Please see **[database_init/README.md](database_init/README.md)** for complete documentation.
+Simple database initialization for development.
 
 ## Quick Start
 
 ```bash
-# First time setup
-cd database_init/data
-cp system_admin.example.json system_admin.json
-cp companies.example.json companies.json
-cp users.example.json users.json
-cp products.example.json products.json
-
-# Reset and seed database
-cd ..
+cd backend
 python database_init/reset.py
 ```
 
-## What Changed
+**That's it!** No setup required.
 
-The database initialization has been reorganized for better maintainability:
+## What It Does
 
-**Old Structure:**
-- `reset_database.py` - Script with embedded data
-- `seed_data.example.json` - All data in one file
-- `create_system_admin.py` - Separate admin script
+- Drops all tables
+- Creates fresh tables
+- Loads test data from `.example.json` files
+- Seeds database with sample companies, users, and products
 
-**New Structure:**
-```
-database_init/
-├── reset.py          # Main script
-├── operations.py     # Database operations (code only)
-├── data/             # All seed data
-│   ├── system_admin.json
-│   ├── companies.json
-│   ├── users.json
-│   └── products.json
-└── README.md         # Full documentation
-```
+## Default Login
 
-**Benefits:**
-- ✅ Clear separation of code and data
-- ✅ Easy to customize each entity type
-- ✅ Modular - add/remove data files as needed
-- ✅ Better organization for team collaboration
+After running the script, login with:
 
-## See Also
+- **Phone:** `07700000000`
+- **Password:** `Admin123`
 
-- [database_init/README.md](database_init/README.md) - Full documentation
-- [database_init/data/](database_init/data/) - Seed data files
+## Full Documentation
 
-## Old Files
-
-The following files are deprecated and will be removed:
-- `reset_database.py` (use `database_init/reset.py` instead)
-- `seed_data.example.json` (use files in `database_init/data/` instead)
-- `create_system_admin.py` (use `database_init/reset.py` instead)
+See [database_init/README.md](database_init/README.md) for:
+- Default test accounts
+- Sample data details
+- How to customize test data
