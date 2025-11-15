@@ -1,32 +1,55 @@
 """Repository layer for company feature."""
 import uuid
+from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from typing import Protocol
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from features.company.models import Company
 
 
 # ============================================================================
-# Repository Interface (Protocol)
+# Repository Interface (Abstract Base Class)
 # ============================================================================
 
-class ICompanyRepository(Protocol):
+class ICompanyRepository(ABC):
     """Interface for company repository."""
 
-    async def create(self, name: str) -> Company: ...
-    async def get_by_id(self, company_id: str) -> Company | None: ...
-    async def get_by_name(self, name: str) -> Company | None: ...
-    async def get_all(self, skip: int = 0, limit: int = 100) -> list[Company]: ...
-    async def update(self, company_id: str, name: str | None = None, is_active: bool | None = None) -> Company | None: ...
-    async def delete(self, company_id: str) -> bool: ...
+    @abstractmethod
+    async def create(self, name: str) -> Company:
+        """Create new company."""
+        pass
+
+    @abstractmethod
+    async def get_by_id(self, company_id: str) -> Company | None:
+        """Get company by ID."""
+        pass
+
+    @abstractmethod
+    async def get_by_name(self, name: str) -> Company | None:
+        """Get company by name."""
+        pass
+
+    @abstractmethod
+    async def get_all(self, skip: int = 0, limit: int = 100) -> list[Company]:
+        """Get all companies with pagination."""
+        pass
+
+    @abstractmethod
+    async def update(self, company_id: str, name: str | None = None, is_active: bool | None = None) -> Company | None:
+        """Update company."""
+        pass
+
+    @abstractmethod
+    async def delete(self, company_id: str) -> bool:
+        """Delete company."""
+        pass
 
 
 # ============================================================================
 # Repository Implementation
 # ============================================================================
 
-class CompanyRepository:
+class CompanyRepository(ICompanyRepository):
     """Company repository implementation."""
 
     def __init__(self, db: AsyncSession):

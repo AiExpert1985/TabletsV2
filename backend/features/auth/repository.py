@@ -1,56 +1,101 @@
 """Repository layer for auth feature - abstracts database operations."""
 import uuid
+from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from typing import Protocol
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from features.auth.models import User, RefreshToken
 
 
 # ============================================================================
-# Repository Interfaces (Protocols)
+# Repository Interfaces (Abstract Base Classes)
 # ============================================================================
 
-class IUserRepository(Protocol):
+class IUserRepository(ABC):
     """Interface for user repository."""
 
+    @abstractmethod
     async def create(
         self,
         phone_number: str,
         hashed_password: str,
         company_id: str | None = None,
         role: str = "user"
-    ) -> User: ...
-    async def get_by_phone(self, phone_number: str) -> User | None: ...
-    async def get_by_id(self, user_id: str) -> User | None: ...
-    async def phone_exists(self, phone_number: str) -> bool: ...
-    async def count_users(self) -> int: ...
-    async def update_last_login(self, user_id: str) -> None: ...
-    async def update_password(self, user_id: str, hashed_password: str) -> None: ...
+    ) -> User:
+        """Create new user."""
+        pass
+
+    @abstractmethod
+    async def get_by_phone(self, phone_number: str) -> User | None:
+        """Get user by phone number."""
+        pass
+
+    @abstractmethod
+    async def get_by_id(self, user_id: str) -> User | None:
+        """Get user by ID."""
+        pass
+
+    @abstractmethod
+    async def phone_exists(self, phone_number: str) -> bool:
+        """Check if phone number exists."""
+        pass
+
+    @abstractmethod
+    async def count_users(self) -> int:
+        """Count total users."""
+        pass
+
+    @abstractmethod
+    async def update_last_login(self, user_id: str) -> None:
+        """Update user's last login timestamp."""
+        pass
+
+    @abstractmethod
+    async def update_password(self, user_id: str, hashed_password: str) -> None:
+        """Update user's password."""
+        pass
 
 
-class IRefreshTokenRepository(Protocol):
+class IRefreshTokenRepository(ABC):
     """Interface for refresh token repository."""
 
+    @abstractmethod
     async def create(
         self,
         user_id: str,
         token_id: str,
         token_hash: str,
         expires_at: datetime
-    ) -> RefreshToken: ...
+    ) -> RefreshToken:
+        """Create new refresh token."""
+        pass
 
-    async def get_by_token_id(self, token_id: str) -> RefreshToken | None: ...
-    async def revoke(self, token_id: str) -> None: ...
-    async def revoke_all_for_user(self, user_id: str) -> None: ...
-    async def delete_expired(self) -> int: ...
+    @abstractmethod
+    async def get_by_token_id(self, token_id: str) -> RefreshToken | None:
+        """Get refresh token by token_id."""
+        pass
+
+    @abstractmethod
+    async def revoke(self, token_id: str) -> None:
+        """Revoke a refresh token."""
+        pass
+
+    @abstractmethod
+    async def revoke_all_for_user(self, user_id: str) -> None:
+        """Revoke all refresh tokens for a user."""
+        pass
+
+    @abstractmethod
+    async def delete_expired(self) -> int:
+        """Delete expired tokens."""
+        pass
 
 
 # ============================================================================
 # Repository Implementations
 # ============================================================================
 
-class UserRepository:
+class UserRepository(IUserRepository):
     """User repository implementation."""
 
     def __init__(self, db: AsyncSession):
@@ -143,7 +188,7 @@ class UserRepository:
         await self.db.flush()
 
 
-class RefreshTokenRepository:
+class RefreshTokenRepository(IRefreshTokenRepository):
     """Refresh token repository implementation."""
 
     def __init__(self, db: AsyncSession):
