@@ -80,7 +80,8 @@ def setup_logging():
         backupCount=5,
         encoding='utf-8'
     )
-    file_handler.setLevel(logging.DEBUG)
+    # Use INFO level in production to avoid excessive logging
+    file_handler.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
     file_formatter = logging.Formatter(log_format, datefmt=date_format)
     file_handler.setFormatter(file_formatter)
     root_logger.addHandler(file_handler)
@@ -100,6 +101,7 @@ def setup_logging():
     # Reduce noise from third-party libraries
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
     logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+    logging.getLogger("watchfiles.main").setLevel(logging.WARNING)  # Prevent log file feedback loop
 
     # Log startup message
     root_logger.info("=" * 70)
