@@ -96,8 +96,8 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 # Include routers
 app.include_router(auth_router, prefix="/api")
 app.include_router(user_router, prefix="/api")
-app.include_router(company_router)
-app.include_router(product_router)
+app.include_router(company_router, prefix="/api")
+app.include_router(product_router, prefix="/api")
 
 
 # Health check endpoint
