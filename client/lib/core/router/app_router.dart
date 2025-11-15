@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:client/features/auth/presentation/screens/login_screen.dart';
-import 'package:client/features/auth/presentation/screens/signup_screen.dart';
 import 'package:client/features/auth/presentation/providers/auth_provider.dart';
 import 'package:client/features/auth/presentation/providers/auth_state.dart';
 import 'package:client/features/home/presentation/screens/home_screen.dart';
@@ -35,11 +34,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/auth/login',
         name: 'login',
         builder: (context, state) => const LoginScreen(),
-      ),
-      GoRoute(
-        path: '/auth/signup',
-        name: 'signup',
-        builder: (context, state) => const SignupScreen(),
       ),
       GoRoute(
         path: '/home',
