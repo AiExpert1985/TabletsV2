@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:client/features/product/domain/entities/product.dart';
 import 'package:client/features/product/presentation/providers/product_provider.dart';
+import 'package:client/features/auth/presentation/providers/auth_provider.dart';
+import 'package:client/features/auth/presentation/providers/auth_state.dart';
+import 'package:client/features/home/presentation/screens/home_screen.dart';
 
 class ProductListScreen extends ConsumerWidget {
   const ProductListScreen({super.key});
@@ -9,11 +12,23 @@ class ProductListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final productsAsync = ref.watch(productsProvider);
+    final authState = ref.watch(authProvider);
+    final user = authState is Authenticated ? authState.user : null;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Products'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+            onPressed: () async {
+              await ref.read(authProvider.notifier).logout();
+            },
+          ),
+        ],
       ),
+      drawer: user != null ? AppDrawer(user: user) : null,
       body: productsAsync.when(
         data: (products) {
           if (products.isEmpty) {
