@@ -6,6 +6,10 @@ class UserModel extends User {
     required super.id,
     required super.phoneNumber,
     super.email,
+    super.companyId,
+    required super.role,
+    super.companyRoles = const [],
+    super.permissions = const [],
     required super.isActive,
     required super.isPhoneVerified,
     required super.createdAt,
@@ -18,6 +22,16 @@ class UserModel extends User {
       id: json['id'] as String,
       phoneNumber: json['phone_number'] as String,
       email: json['email'] as String?,
+      companyId: json['company_id'] as String?,
+      role: json['role'] as String,
+      companyRoles: (json['company_roles'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      permissions: (json['permissions'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
       isActive: json['is_active'] as bool,
       isPhoneVerified: json['is_phone_verified'] as bool,
       createdAt: DateTime.parse(json['created_at'] as String),
@@ -33,6 +47,10 @@ class UserModel extends User {
       'id': id,
       'phone_number': phoneNumber,
       'email': email,
+      'company_id': companyId,
+      'role': role,
+      'company_roles': companyRoles,
+      'permissions': permissions,
       'is_active': isActive,
       'is_phone_verified': isPhoneVerified,
       'created_at': createdAt.toIso8601String(),
