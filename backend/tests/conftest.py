@@ -1,6 +1,5 @@
 """Pytest configuration and fixtures for backend tests."""
 import pytest
-import asyncio
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.pool import NullPool
@@ -62,14 +61,6 @@ def override_settings(test_settings: Settings):
 # ============================================================================
 # Database Fixtures
 # ============================================================================
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create event loop for async tests."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
 
 @pytest.fixture(scope="session")
 async def test_engine(test_settings: Settings):

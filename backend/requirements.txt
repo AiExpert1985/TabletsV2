@@ -19,5 +19,6 @@ bcrypt==4.2.0
 python-dotenv==1.0.1
 
 # Testing
+# NOTE: Use pytest-asyncio ONLY (do not install pytest-anyio - they conflict)
 pytest==8.3.2
 pytest-asyncio==0.24.0
