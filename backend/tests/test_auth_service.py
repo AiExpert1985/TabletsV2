@@ -13,7 +13,7 @@ from core.exceptions import (
     UserNotFoundException,
     PasswordTooWeakException,
 )
-from core.security import verify_password, hash_password
+from core.security import verify_password, verify_refresh_token, hash_password
 
 
 # ============================================================================
@@ -299,11 +299,15 @@ class TestAuthServiceRefreshToken:
         # Act
         new_tokens = await auth_service.refresh_access_token(tokens.refresh_token)
 
-        # Assert - check that new tokens were generated successfully
+        # Assert - verify new tokens were generated
         assert new_tokens.access_token is not None
         assert new_tokens.refresh_token is not None
         assert new_tokens.token_type == "bearer"
-        # Note: Tokens might be identical if created in the same second due to iat timestamp
+
+        # Verify tokens are different by comparing token IDs
+        old_payload = verify_refresh_token(tokens.refresh_token)
+        new_payload = verify_refresh_token(new_tokens.refresh_token)
+        assert old_payload["token_id"] != new_payload["token_id"], "New token should have different token_id"
 
     @pytest.mark.asyncio
     async def test_refresh_token_one_time_use(
@@ -334,7 +338,7 @@ class TestAuthServiceRefreshToken:
     ):
         """Refresh with invalid token fails."""
         # Act & Assert
-        with pytest.raises(Exception):  # Could be InvalidTokenException or JWT error
+        with pytest.raises(InvalidTokenException):
             await auth_service.refresh_access_token("invalid.token.here")
 
 

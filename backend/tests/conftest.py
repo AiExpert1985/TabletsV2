@@ -29,7 +29,7 @@ def test_settings() -> Settings:
     return Settings(
         APP_NAME="TabletsV2 Test",
         DEBUG=True,
-        DATABASE_URL="sqlite+aiosqlite:///./test.db",  # File-based for test persistence
+        DATABASE_URL="sqlite+aiosqlite:///:memory:",  # In-memory for fast, isolated tests
         JWT_SECRET_KEY="test-secret-key-for-testing-only-not-for-production",
         JWT_ALGORITHM="HS256",
         ACCESS_TOKEN_EXPIRE_MINUTES=30,

@@ -1,6 +1,6 @@
 """Pydantic schemas (DTOs) for API request/response."""
 from datetime import datetime
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 # ============================================================================
@@ -48,8 +48,7 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     expires_in: int  # seconds
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserResponse(BaseModel):
@@ -67,8 +66,7 @@ class UserResponse(BaseModel):
     created_at: datetime
     last_login_at: datetime | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SignupResponse(BaseModel):
@@ -96,8 +94,8 @@ class ErrorResponse(BaseModel):
 
     error: dict
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "error": {
                     "code": "PHONE_ALREADY_EXISTS",
@@ -105,6 +103,7 @@ class ErrorResponse(BaseModel):
                 }
             }
         }
+    )
 
 
 # ============================================================================
