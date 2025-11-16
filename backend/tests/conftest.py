@@ -29,8 +29,8 @@ def test_settings() -> Settings:
     return Settings(
         APP_NAME="TabletsV2 Test",
         DEBUG=True,
-        # Use shared in-memory DB - all connections share the same database
-        DATABASE_URL="sqlite+aiosqlite:///file::memory:?cache=shared&uri=true",
+        # File-based test DB with transaction rollback for isolation
+        DATABASE_URL="sqlite+aiosqlite:///./test.db",
         JWT_SECRET_KEY="test-secret-key-for-testing-only-not-for-production",
         JWT_ALGORITHM="HS256",
         ACCESS_TOKEN_EXPIRE_MINUTES=30,
