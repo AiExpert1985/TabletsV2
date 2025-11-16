@@ -176,7 +176,13 @@ class AuthService:
             raise InvalidTokenException("Token not found or revoked")
 
         # 3. Check token not expired (double check)
-        if db_token.expires_at < datetime.now(timezone.utc):
+        # Handle both naive and aware datetimes (SQLite returns naive)
+        now = datetime.now(timezone.utc)
+        expires_at = db_token.expires_at
+        if expires_at.tzinfo is None:
+            # Make naive datetime aware (assume UTC)
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        if expires_at < now:
             raise InvalidTokenException("Token expired")
 
         # 4. Get user

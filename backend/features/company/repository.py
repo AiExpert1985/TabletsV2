@@ -110,6 +110,9 @@ class CompanyRepository(ICompanyRepository):
             .values(**update_data)
         )
 
+        # Flush to ensure changes are visible
+        await self.db.flush()
+
         # Return updated company
         return await self.get_by_id(company_id)
 
