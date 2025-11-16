@@ -60,53 +60,23 @@ class AuthService:
 
     async def signup(self, phone_number: str, password: str) -> tuple[User, TokenPair]:
         """
-        Register new user.
+        Register new user (PUBLIC SIGNUP DISABLED).
 
-        First user becomes system_admin automatically.
-        Subsequent signups are not allowed (only system_admin can create users).
+        Public signup is disabled for security. System admins create all users
+        via admin endpoints or CLI script (create_system_admin.py).
 
         Returns:
             (User, TokenPair)
 
         Raises:
-            PhoneAlreadyExistsException: Phone already registered
-            PasswordTooWeakException: Password doesn't meet requirements
-            ValueError: If trying to signup after first user (use admin endpoints)
+            ValueError: Public signup is disabled
         """
-        # 1. Normalize phone number
-        normalized_phone = normalize_phone_number(phone_number)
-
-        # 2. Check if phone exists
-        if await self.user_repo.phone_exists(normalized_phone):
-            raise PhoneAlreadyExistsException()
-
-        # 3. Check if this is the first user
-        user_count = await self.user_repo.count_users()
-
-        if user_count > 0:
-            # After first user, only system_admin can create users via admin endpoints
-            raise ValueError(
-                "Public signup is disabled. Please contact system administrator to create your account."
-            )
-
-        # 4. Validate password strength
-        validate_password_strength(password)
-
-        # 5. Hash password
-        hashed_pw = hash_password(password)
-
-        # 6. Create first user as system_admin (no company)
-        user = await self.user_repo.create(
-            phone_number=normalized_phone,
-            hashed_password=hashed_pw,
-            company_id=None,  # System admin has no company
-            role="system_admin",
+        # Public signup is completely disabled
+        # Use create_system_admin.py CLI script to create system admin
+        # System admins create other users via admin endpoints
+        raise ValueError(
+            "Public signup is disabled. Please contact system administrator to create your account."
         )
-
-        # 7. Generate tokens
-        tokens = await self._generate_token_pair(user)
-
-        return user, tokens
 
     async def login(self, phone_number: str, password: str) -> tuple[User, TokenPair]:
         """

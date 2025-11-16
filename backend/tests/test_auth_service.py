@@ -21,106 +21,20 @@ from core.security import verify_password, verify_refresh_token, hash_password
 # ============================================================================
 
 class TestAuthServiceSignup:
-    """Test user signup functionality."""
+    """Test user signup functionality (PUBLIC SIGNUP DISABLED)."""
 
     @pytest.mark.asyncio
-    async def test_first_signup_creates_system_admin(
+    async def test_public_signup_is_disabled(
         self,
         auth_service: AuthService,
-        db_session: AsyncSession,
     ):
-        """First user signup creates system_admin with no company."""
-        # Act
-        user, tokens = await auth_service.signup(
-            phone_number="9647700000000",
-            password="StrongPassword123",
-        )
-
-        # Assert
-        assert user.phone_number == "9647700000000"
-        assert user.role.value == "system_admin"
-        assert user.company_id is None
-        assert user.is_active is True
-        assert verify_password("StrongPassword123", user.hashed_password)
-
-        # Check tokens
-        assert tokens.access_token is not None
-        assert tokens.refresh_token is not None
-        assert tokens.token_type == "bearer"
-        assert tokens.expires_in > 0
-
-    @pytest.mark.asyncio
-    async def test_second_signup_fails(
-        self,
-        auth_service: AuthService,
-        test_user: User,
-    ):
-        """Second signup fails - only admin can create users."""
-        # Act & Assert
+        """Public signup is completely disabled."""
+        # Act & Assert - Any signup attempt should fail
         with pytest.raises(ValueError, match="Public signup is disabled"):
             await auth_service.signup(
-                phone_number="9647700000002",
-                password="AnotherPassword123",
+                phone_number="9647700000000",
+                password="StrongPassword123",
             )
-
-    @pytest.mark.asyncio
-    async def test_signup_duplicate_phone_fails(
-        self,
-        auth_service: AuthService,
-        user_repo: UserRepository,
-    ):
-        """Signup with existing phone number fails."""
-        # Arrange - create first user
-        await auth_service.signup(
-            phone_number="9647700000010",
-            password="Password123",
-        )
-
-        # Clear DB to allow second signup
-        # (In real scenario, this would be caught by phone_exists check)
-
-        # Create another user directly
-        await user_repo.create(
-            phone_number="9647700000011",
-            hashed_password=hash_password("Test123"),
-            company_id=None,
-            role="system_admin",
-        )
-
-        # Act & Assert
-        with pytest.raises(PhoneAlreadyExistsException):
-            await auth_service.signup(
-                phone_number="9647700000011",  # Same phone
-                password="Password456",
-            )
-
-    @pytest.mark.asyncio
-    async def test_signup_weak_password_fails(
-        self,
-        auth_service: AuthService,
-    ):
-        """Signup with weak password fails."""
-        # Act & Assert
-        with pytest.raises(PasswordTooWeakException):
-            await auth_service.signup(
-                phone_number="9647700000020",
-                password="weak",  # Too short
-            )
-
-    @pytest.mark.asyncio
-    async def test_signup_normalizes_phone(
-        self,
-        auth_service: AuthService,
-    ):
-        """Signup normalizes phone number correctly."""
-        # Act
-        user, _ = await auth_service.signup(
-            phone_number="964 770 123 4567",  # With spaces
-            password="ValidPassword123",
-        )
-
-        # Assert
-        assert user.phone_number == "9647701234567"  # Spaces removed
 
 
 # ============================================================================
