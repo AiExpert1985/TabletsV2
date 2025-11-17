@@ -2,11 +2,15 @@
 import uuid
 import json
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 from sqlalchemy import Boolean, String, DateTime, ForeignKey, Index, TypeDecorator, Enum, Text
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSON as PG_JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from core.database import Base
 import enum
+
+if TYPE_CHECKING:
+    from features.company.models import Company
 
 
 class UserRole(str, enum.Enum):
@@ -62,9 +66,9 @@ class JSONList(TypeDecorator):
 
     def load_dialect_impl(self, dialect):
         if dialect.name == 'postgresql':
-            return dialect.type_descriptor(PG_JSON)
+            return dialect.type_descriptor(PG_JSON())
         else:
-            return dialect.type_descriptor(Text)
+            return dialect.type_descriptor(Text())
 
     def process_bind_param(self, value, dialect):
         if value is None:
