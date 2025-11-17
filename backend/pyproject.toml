@@ -25,7 +25,7 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["core", "features", "features.auth", "features.company", "features.product", "features.authorization", "scripts", "scripts.db", "scripts.admin"]
+packages = ["core", "features", "features.auth", "features.company", "features.product", "features.authorization", "scripts", "scripts.db"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
