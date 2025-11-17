@@ -1,0 +1,145 @@
+{
+  "system_admin": {
+    "phone_number": "07701791983",
+    "password": "Admin789",
+    "email": "admin@tabletsv2.com"
+  },
+  "companies": [
+    {
+      "name": "ACME Corporation",
+      "is_active": true
+    },
+    {
+      "name": "TechStart Solutions",
+      "is_active": true
+    },
+    {
+      "name": "Global Traders Inc",
+      "is_active": true
+    }
+  ],
+  "users": [
+    {
+      "phone_number": "07701111111",
+      "password": "Admin123",
+      "email": "admin@acme.com",
+      "company_name": "ACME Corporation",
+      "role": "company_admin",
+      "company_roles": ["sales", "inventory", "accounting"]
+    },
+    {
+      "phone_number": "07702222222",
+      "password": "Sales123",
+      "email": "sales@acme.com",
+      "company_name": "ACME Corporation",
+      "role": "user",
+      "company_roles": ["sales"]
+    },
+    {
+      "phone_number": "07703333333",
+      "password": "Inventory123",
+      "email": "inventory@acme.com",
+      "company_name": "ACME Corporation",
+      "role": "user",
+      "company_roles": ["inventory"]
+    },
+    {
+      "phone_number": "07704444444",
+      "password": "Account123",
+      "email": "accounting@acme.com",
+      "company_name": "ACME Corporation",
+      "role": "user",
+      "company_roles": ["accounting"]
+    }
+  ],
+  "products": [
+    {
+      "company_name": "ACME Corporation",
+      "name": "Laptop - Dell XPS 15",
+      "sku": "DELL-XPS15-001",
+      "description": "High-performance laptop for business",
+      "cost_price": "800.00",
+      "selling_price": "1200.00",
+      "stock_quantity": 15,
+      "reorder_level": 5,
+      "is_active": true
+    },
+    {
+      "company_name": "ACME Corporation",
+      "name": "Wireless Mouse",
+      "sku": "MS-WL-001",
+      "description": "Ergonomic wireless mouse",
+      "cost_price": "10.00",
+      "selling_price": "25.00",
+      "stock_quantity": 50,
+      "reorder_level": 20,
+      "is_active": true
+    },
+    {
+      "company_name": "ACME Corporation",
+      "name": "USB-C Hub",
+      "sku": "HUB-USBC-001",
+      "description": "7-in-1 USB-C hub with HDMI",
+      "cost_price": "20.00",
+      "selling_price": "45.00",
+      "stock_quantity": 3,
+      "reorder_level": 10,
+      "is_active": true
+    },
+    {
+      "company_name": "ACME Corporation",
+      "name": "Office Chair",
+      "sku": "CHAIR-ERG-001",
+      "description": "Ergonomic office chair with lumbar support",
+      "cost_price": "150.00",
+      "selling_price": "300.00",
+      "stock_quantity": 8,
+      "reorder_level": 5,
+      "is_active": true
+    },
+    {
+      "company_name": "ACME Corporation",
+      "name": "Monitor - 27\" 4K",
+      "sku": "MON-27-4K-001",
+      "description": "27-inch 4K UHD monitor",
+      "cost_price": "300.00",
+      "selling_price": "500.00",
+      "stock_quantity": 12,
+      "reorder_level": 5,
+      "is_active": true
+    },
+    {
+      "company_name": "ACME Corporation",
+      "name": "Mechanical Keyboard",
+      "sku": "KB-MECH-001",
+      "description": "RGB mechanical keyboard with blue switches",
+      "cost_price": "60.00",
+      "selling_price": "120.00",
+      "stock_quantity": 25,
+      "reorder_level": 10,
+      "is_active": true
+    },
+    {
+      "company_name": "ACME Corporation",
+      "name": "Webcam HD",
+      "sku": "CAM-HD-001",
+      "description": "1080p webcam with built-in microphone",
+      "cost_price": "35.00",
+      "selling_price": "70.00",
+      "stock_quantity": 2,
+      "reorder_level": 8,
+      "is_active": true
+    },
+    {
+      "company_name": "ACME Corporation",
+      "name": "Desk Lamp LED",
+      "sku": "LAMP-LED-001",
+      "description": "Adjustable LED desk lamp with USB port",
+      "cost_price": "15.00",
+      "selling_price": "35.00",
+      "stock_quantity": 30,
+      "reorder_level": 15,
+      "is_active": true
+    }
+  ]
+}
