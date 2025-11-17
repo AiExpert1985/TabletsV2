@@ -1,5 +1,13 @@
 # Project Context - TabletsV2 ERP
 
+> **📖 AI Assistant Onboarding Guide**
+>
+> This file, along with `AI_GUIDELINES.md`, contains **everything** an AI assistant needs to know about this project. Read both files at the start of each session to understand:
+> - **AI_GUIDELINES.md** - *How* to work (tone, code style, problem-solving approach)
+> - **PROJECT_CONTEXT.md** (this file) - *What* exists and *why* (architecture, decisions, patterns, trade-offs)
+>
+> These two files are the single source of truth. No other documentation files are needed for AI onboarding.
+
 ## Overview
 Multi-tenant ERP system with FastAPI backend and Flutter client, following Clean Architecture principles with emphasis on simplicity and pragmatism.
 
@@ -40,6 +48,49 @@ Multi-tenant ERP system with FastAPI backend and Flutter client, following Clean
 
 ---
 
+## Flutter Client Patterns
+
+### State Management: Sealed Classes (Not Enums)
+**Critical:** Always use sealed classes for state, never enums.
+
+```dart
+// ✅ CORRECT
+sealed class AuthState {}
+class AuthStateLoading extends AuthState {}
+class AuthStateAuthenticated extends AuthState {
+  final User user;
+  AuthStateAuthenticated(this.user);
+}
+
+// ❌ WRONG - Enums can't carry data
+enum AuthStatus { loading, authenticated }
+```
+
+**Why:** Compiler enforces exhaustive pattern matching, each state carries its own data, impossible states become impossible.
+
+### Riverpod Pattern
+- **Flow:** `Screen → Provider → Service → Repository → API` (never skip layers)
+- **Services:** Business logic only (phone normalization, validation)
+- **Repositories:** Data access (API calls, storage)
+- **Providers:** State management (StateNotifier with sealed class states)
+
+### Error Handling
+- Map technical errors to user-friendly messages in providers
+- Exception hierarchy: `NetworkException`, `UnauthorizedException`, `ValidationException`
+- Never expose technical error messages to users
+
+### Models vs Entities
+- **Pattern:** `UserModel extends User` (inheritance when API matches domain)
+- **Why:** Pragmatic - avoids mapping boilerplate when structures align
+- **When to separate:** If API and domain diverge significantly
+
+### UI & Localization
+- **Multi-language ready:** Design for English/Arabic (RTL/LTR) from start
+- Use `EdgeInsets.symmetric` instead of left/right
+- Use `Directionality.of(context)` for text direction
+
+---
+
 ## Feature Status
 
 ### ✅ Completed
@@ -64,16 +115,6 @@ Multi-tenant ERP system with FastAPI backend and Flutter client, following Clean
 - **Security:** Bcrypt (cost 12) + HMAC-SHA256 token hashing
 - **Token strategy:** Single refresh token (logout other devices on new login)
 - **No public signup:** Admin creation via CLI only (`scripts/admin/create_system_admin.py`)
-
-### State Management (Client)
-- **Pattern:** Riverpod with sealed class states
-- **Flow:** Provider → Service → Repository → API
-- **Example:** `AuthState.authenticated(user)` vs `AuthState.unauthenticated()`
-
-### Entity vs Model (Client)
-- **Decision:** `UserModel extends User` (inheritance, not separation)
-- **Rationale:** API structure matches entity perfectly; pragmatic over theoretical purity
-- **Trade-off:** Avoided 100+ lines of duplication
 
 ### Permission System
 - **Structure:** System roles (`system_admin`, `company_admin`, `user`) + company roles
@@ -100,8 +141,25 @@ Multi-tenant ERP system with FastAPI backend and Flutter client, following Clean
 - ✅ Security (auth, permissions)
 - ✅ API endpoints
 - **Tool:** pytest + async support, SQLite test DB with transaction rollback
+- **Run:** `cd backend && pytest`
 
 **Key Insight:** Test critical business logic units, not framework internals or UI complexity.
+
+### Running Tests
+**Backend:**
+```bash
+cd backend
+pytest                    # All tests
+pytest tests/test_auth.py # Specific file
+```
+
+**Client:**
+```bash
+cd client
+flutter test                            # All tests
+flutter test test/core/utils/           # Specific folder
+flutter pub run build_runner build      # Generate mocks (first time)
+```
 
 ---
 
@@ -143,15 +201,27 @@ Multi-tenant ERP system with FastAPI backend and Flutter client, following Clean
 - **Engine:** PostgreSQL with async support (`asyncpg`)
 - **UUID handling:** Native UUID type
 
-### Setup
+### Quick Setup
 ```bash
 cd backend
-python scripts/db/reset_database.py  # Drops tables, recreates, seeds data
+python scripts/db/reset_database.py  # Drops all tables, recreates, seeds data
+# OR use the original script:
+python scripts/db/reset.py
 ```
 
+**What it does:**
+1. Drops all tables (clean slate)
+2. Creates tables from current models
+3. Loads test data from `.example.json` files
+4. Seeds database with companies, users, products
+
 **Default login after reset:**
-- Phone: `07700000000`
-- Password: `Admin123`
+- **System Admin:** Phone `07700000000` / Password `Admin123`
+- **Company Admin:** Phone `07701111111` / Password `Admin123`
+
+**Seed data locations:**
+- `scripts/db/seed_data.example.json` - All-in-one (used by reset_database.py)
+- `scripts/db/data/*.example.json` - Individual files (used by reset.py)
 
 ---
 
