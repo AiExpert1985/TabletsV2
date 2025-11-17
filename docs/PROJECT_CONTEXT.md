@@ -141,25 +141,11 @@ enum AuthStatus { loading, authenticated }
 - ✅ Security (auth, permissions)
 - ✅ API endpoints
 - **Tool:** pytest + async support, SQLite test DB with transaction rollback
-- **Run:** `cd backend && pytest`
 
 **Key Insight:** Test critical business logic units, not framework internals or UI complexity.
 
-### Running Tests
-**Backend:**
-```bash
-cd backend
-pytest                    # All tests
-pytest tests/test_auth.py # Specific file
-```
-
-**Client:**
-```bash
-cd client
-flutter test                            # All tests
-flutter test test/core/utils/           # Specific folder
-flutter pub run build_runner build      # Generate mocks (first time)
-```
+> **🧪 Running Tests**
+> For test commands, see [`README.md`](../README.md).
 
 ---
 
@@ -190,38 +176,20 @@ flutter pub run build_runner build      # Generate mocks (first time)
 
 ---
 
-## Database
+## Database Strategy
 
-### Development
-- **Engine:** SQLite with async support (`aiosqlite`)
-- **Reset:** `backend/scripts/db/reset_database.py`
-- **Seed data:** `backend/scripts/db/seed_data.example.json`
+### Development vs Production
+- **Development:** SQLite with async support (`aiosqlite`) - Zero setup, fast iteration
+- **Production:** PostgreSQL with async support (`asyncpg`) - Robust, scalable
+- **UUID handling:** Custom GUID TypeDecorator ensures consistent format across both databases
 
-### Production
-- **Engine:** PostgreSQL with async support (`asyncpg`)
-- **UUID handling:** Native UUID type
+### Why SQLite for Development?
+**Decision:** SQLite for dev, PostgreSQL for production
+**Rationale:** Eliminates setup friction, allows instant database reset
+**Trade-off:** Ensures compatibility layer works correctly (TypeDecorator pattern)
 
-### Quick Setup
-```bash
-cd backend
-python scripts/db/reset_database.py  # Drops all tables, recreates, seeds data
-# OR use the original script:
-python scripts/db/reset.py
-```
-
-**What it does:**
-1. Drops all tables (clean slate)
-2. Creates tables from current models
-3. Loads test data from `.example.json` files
-4. Seeds database with companies, users, products
-
-**Default login after reset:**
-- **System Admin:** Phone `07700000000` / Password `Admin123`
-- **Company Admin:** Phone `07701111111` / Password `Admin123`
-
-**Seed data locations:**
-- `scripts/db/seed_data.example.json` - All-in-one (used by reset_database.py)
-- `scripts/db/data/*.example.json` - Individual files (used by reset.py)
+> **🛠️ Database Setup & Scripts**
+> For database initialization, reset scripts, and seed data, see [`README.md`](../README.md).
 
 ---
 
@@ -243,32 +211,24 @@ python scripts/db/reset.py
 
 ---
 
-## Scripts & Utilities
-
-### Database Scripts
-- `backend/scripts/db/reset_database.py` - Drop/recreate/seed database
-- `backend/scripts/db/seed_data.example.json` - Example seed data template
-
-### Admin Scripts
-- `backend/scripts/admin/create_system_admin.py` - CLI tool to create system admins (security: no public signup)
-
----
-
-## Dependencies & Configuration
+## Technology Stack
 
 ### Backend
-- **Framework:** FastAPI 0.115.0 + Uvicorn
+- **Framework:** FastAPI 0.115.0 + Uvicorn (async Python web framework)
 - **Database:** SQLAlchemy 2.0 (async) + asyncpg/aiosqlite
-- **Security:** PyJWT, bcrypt
+- **Security:** PyJWT (tokens), bcrypt (password hashing)
 - **Testing:** pytest + pytest-asyncio (NOT pytest-anyio - they conflict)
-- **Config:** All dependencies in `pyproject.toml` (no `requirements.txt`)
+- **Config:** Dependencies in `pyproject.toml` (not `requirements.txt`)
 
 ### Client
-- **Framework:** Flutter 3.x
-- **State:** Riverpod
-- **HTTP:** Dio with interceptors
-- **Storage:** flutter_secure_storage (token persistence)
-- **Testing:** mockito + build_runner
+- **Framework:** Flutter 3.x (cross-platform mobile)
+- **State:** Riverpod (reactive state management)
+- **HTTP:** Dio with interceptors (auth, logging)
+- **Storage:** flutter_secure_storage (encrypted token persistence)
+- **Testing:** mockito + build_runner (mocking framework)
+
+> **🔧 Scripts & Installation**
+> For setup scripts, dependencies installation, and utilities, see [`README.md`](../README.md).
 
 ---
 
