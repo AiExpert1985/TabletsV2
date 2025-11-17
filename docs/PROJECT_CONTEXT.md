@@ -292,12 +292,40 @@ When starting a new feature or fixing a bug:
 
 ### Session: Project Reorganization
 - Moved documentation to `docs/` folder
-- Consolidated scripts into `backend/scripts/db/` and `backend/scripts/admin/`
+- Consolidated scripts into `backend/scripts/db/`
 - Removed redundant `CODING_GUIDELINES.md` (replaced by AI_GUIDELINES.md + PROJECT_CONTEXT.md)
 - Migrated dependencies to `pyproject.toml`
 - Created this PROJECT_CONTEXT.md file for AI assistant handoffs
 
+### Session: Scripts Consolidation & Type Safety (2025-11-17)
+**Decision:** Consolidated all database scripts into single `scripts/db/` folder
+- **Rationale:** Eliminated confusion from having separate `admin/` and `db/` folders
+- **Implementation:**
+  - All scripts now in `scripts/db/`: `setup_all.py`, `reset_db.py`, `create_admin.py`, `seed_data.py`
+  - Removed redundant files: old `reset_database.py`, `operations.py`, `reset.py`
+  - Admin creation separated from seed data (no redundant admin in seed_data.json)
+
+**Decision:** Seed data uses template pattern with gitignore
+- **Rationale:** Seed data contains custom credentials/phone numbers, shouldn't be in git
+- **Implementation:**
+  - `seed_data.example.json` - Template (in git)
+  - `seed_data.json` - Custom data (gitignored)
+  - Users copy example to create their own seed file
+
+**Decision:** Fixed type safety issues for Python 3.11+ compatibility
+- **Pattern:** Use `TYPE_CHECKING` for circular import prevention
+- **Implementation:**
+  - Added `from __future__ import annotations` for PEP 563 compatibility
+  - Used string literals for TypeVar bounds: `ModelType = TypeVar("ModelType", bound="Base")`
+  - Fixed AsyncGenerator return types in database.py
+  - All forward references use TYPE_CHECKING imports
+
+**Decision:** Python 3.11 as minimum version (not 3.13)
+- **Rationale:** asyncpg 0.29.0 doesn't support Python 3.13 (C extension build fails)
+- **Trade-off:** Wait for dependency ecosystem to catch up before supporting 3.13
+- **Current:** All code compatible with both 3.11 and 3.13, but use 3.11 for development
+
 ---
 
 **Last Updated:** 2025-11-17
-**Active Branch:** `claude/review-project-structure-01G2F5HffWoiF8XAJkdcxiRS`
+**Active Branch:** `claude/review-project-docs-01PXqRQ4Wc8zMG7drFtauQZr`
