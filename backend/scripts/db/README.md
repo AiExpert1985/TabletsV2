@@ -38,12 +38,12 @@ cp seed_data.example.json seed_data.json    # Linux/Mac
 
 Then customize `seed_data.json` with your own data (optional).
 
-**Default test accounts** (from seed_data.example.json):
+**Default accounts:**
 
-- **System Admin:** 07701791983 / Admin789
-- **Company Admin:** 07701111111 / Admin123
-- **Sales User:** 07702222222 / Sales123
-- **Inventory User:** 07703333333 / Inventory123
+- **System Admin:** 07701791983 / Admin789 (created by create_admin.py)
+- **Company Admin:** 07701111111 / Admin123 (from seed_data.json)
+- **Sales User:** 07702222222 / Sales123 (from seed_data.json)
+- **Inventory User:** 07703333333 / Inventory123 (from seed_data.json)
 
 **Sample data:**
 - 3 companies

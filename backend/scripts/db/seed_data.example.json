@@ -1,9 +1,4 @@
 {
-  "system_admin": {
-    "phone_number": "07701791983",
-    "password": "Admin789",
-    "email": "admin@tabletsv2.com"
-  },
   "companies": [
     {
       "name": "ACME Corporation",
