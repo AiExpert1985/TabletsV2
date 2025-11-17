@@ -25,10 +25,7 @@ python scripts/db/seed_data.py      # Seed sample data
 | `create_admin.py` | Create admin (07701791983 / Admin789) |
 | `seed_data.py` | Populate from seed_data.json |
 
-<<<<<<< HEAD
-=======
 ## Seed Data
->>>>>>> claude/review-project-docs-01PXqRQ4Wc8zMG7drFtauQZr
 
 **Default accounts:**
 
