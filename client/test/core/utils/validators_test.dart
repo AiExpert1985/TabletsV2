@@ -50,17 +50,11 @@ void main() {
       });
 
       test('returns error for null phone', () {
-        expect(
-          PhoneValidator.validate(null),
-          'Phone number is required',
-        );
+        expect(PhoneValidator.validate(null), 'Phone number is required');
       });
 
       test('returns error for empty phone', () {
-        expect(
-          PhoneValidator.validate(''),
-          'Phone number is required',
-        );
+        expect(PhoneValidator.validate(''), 'Phone number is required');
       });
 
       test('returns null for any non-empty phone (validation disabled)', () {
@@ -93,7 +87,7 @@ void main() {
       });
 
       test('returns false for too long password', () {
-        final longPassword = 'A' * 100 + 'a' * 100 + '1';
+        final longPassword = '${'A' * 100}${'a' * 100}1';
         expect(PasswordValidator.isStrong(longPassword), false);
       });
 
@@ -108,17 +102,11 @@ void main() {
       });
 
       test('returns error for null password', () {
-        expect(
-          PasswordValidator.validate(null),
-          'Password is required',
-        );
+        expect(PasswordValidator.validate(null), 'Password is required');
       });
 
       test('returns error for empty password', () {
-        expect(
-          PasswordValidator.validate(''),
-          'Password is required',
-        );
+        expect(PasswordValidator.validate(''), 'Password is required');
       });
 
       test('returns error for too short password', () {
