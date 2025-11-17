@@ -305,12 +305,13 @@ When starting a new feature or fixing a bug:
   - Removed redundant files: old `reset_database.py`, `operations.py`, `reset.py`
   - Admin creation separated from seed data (no redundant admin in seed_data.json)
 
-**Decision:** Seed data uses template pattern with gitignore
-- **Rationale:** Seed data contains custom credentials/phone numbers, shouldn't be in git
+**Decision:** Seed data committed directly to git (no template pattern)
+- **Rationale:** Contains only sample data (no sensitive credentials), simplicity over abstraction
 - **Implementation:**
-  - `seed_data.example.json` - Template (in git)
-  - `seed_data.json` - Custom data (gitignored)
-  - Users copy example to create their own seed file
+  - `seed_data.json` - Committed to git, users edit directly as needed
+  - Removed from `.gitignore` (both root and backend)
+  - System admin removed from seed data (created separately by `create_admin.py`)
+- **Trade-off:** Users with custom phone numbers will see them in git, but acceptable for sample data
 
 **Decision:** Fixed type safety issues for Python 3.11+ compatibility
 - **Pattern:** Use `TYPE_CHECKING` for circular import prevention
