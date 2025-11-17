@@ -1,1 +1,25 @@
+# Database files
 test.db
+dev.db
+*.db
+*.db-journal
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+
+# Seed data (contains credentials)
+scripts/db/seed_data.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

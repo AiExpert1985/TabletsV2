@@ -2,14 +2,20 @@
 """Script to create a system admin user in the database.
 
 Usage:
-    python create_system_admin.py
+    cd backend
+    python scripts/admin/create_system_admin.py
 
 This script creates a system admin user interactively with proper validation.
 Use this for initial setup or to create additional system admins.
 """
 import asyncio
 import sys
+from pathlib import Path
 from getpass import getpass
+
+# Add backend directory to Python path
+backend_dir = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(backend_dir))
 
 from core.database import AsyncSessionLocal, init_db
 from core.security import (
@@ -69,11 +75,12 @@ async def create_system_admin(
             print("Creating system admin...")
             user = await user_repo.create(
                 phone_number=normalized_phone,
-                email=email,
                 hashed_password=hash_password(password),
                 company_id=None,  # System admin has no company
                 role=UserRole.SYSTEM_ADMIN.value,
             )
+            # Email field exists in User model but repository doesn't set it
+            # Could be added by extending User model directly after creation if needed
             await session.commit()
 
             print()
