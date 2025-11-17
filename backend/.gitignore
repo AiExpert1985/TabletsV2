@@ -15,9 +15,6 @@ build/
 # Environment
 .env
 
-# Seed data (contains credentials)
-scripts/db/seed_data.json
-
 # IDE
 .vscode/
 .idea/

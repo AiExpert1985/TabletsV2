@@ -82,14 +82,6 @@ yarn-error.log*
 **/.env.*.local
 !**/.env.example
 
-# Seed data (contains passwords)
-**/seed_data.json
-!**/seed_data.example.json
-
-# Database initialization data (contains passwords)
-backend/database_init/data/*.json
-!backend/database_init/data/*.example.json
-
 # ===========================
 # Miscellaneous
 # ===========================
