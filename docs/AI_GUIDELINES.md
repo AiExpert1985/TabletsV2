@@ -7,6 +7,59 @@
 - Alert me when I'm pursuing perfectionism over progress or getting distracted from main goals.
 - Prioritize practical, working solutions over perfect code
 
+---
+
+# Documentation Structure
+
+This project has three core documentation files, each serving a distinct purpose:
+
+## 1. README.md - "Getting Started"
+**Audience:** New developers who want to run the project
+**Purpose:** Operational guide - installation, setup, running, troubleshooting
+**Contents:**
+- Quick start instructions (backend + client)
+- Prerequisites and dependencies
+- How to run tests
+- Troubleshooting common issues
+- Links to deeper documentation
+
+**Update when:** Installation steps change, new scripts added, dependencies updated, API endpoints change
+
+## 2. docs/PROJECT_CONTEXT.md - "Understanding the System"
+**Audience:** Maintainers, contributors, AI assistants who need to extend the project
+**Purpose:** Architectural context - decisions, patterns, trade-offs, what to preserve
+**Contents:**
+- Architectural decisions with rationale
+- Design patterns and why they were chosen
+- Feature status (completed vs deferred)
+- Known issues and trade-offs
+- Testing philosophy
+- What to preserve (critical patterns)
+- AI assistant handoff instructions
+
+**Update when:** Architectural decisions made, patterns changed, features added/removed, trade-offs encountered
+
+## 3. docs/AI_GUIDELINES.md (this file) - "How to Work"
+**Audience:** AI assistants
+**Purpose:** Working style, code principles, problem-solving approach
+**Contents:**
+- Communication style and tone
+- Code quality standards
+- Abstraction guidelines
+- Problem-solving framework
+- Review methodology
+
+**Update when:** Coding standards change, new conventions adopted, working style preferences updated
+
+---
+
+**Rule of Thumb:**
+- **README** = "How do I run it?"
+- **PROJECT_CONTEXT** = "Why is it built this way?"
+- **AI_GUIDELINES** = "How should I work on it?"
+
+---
+
 ## Clarifying Questions
 
 - Only ask if 1-2 critical unknowns block correctness. Otherwise, state clear assumptions and proceed.
