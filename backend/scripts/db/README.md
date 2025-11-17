@@ -25,18 +25,6 @@ python scripts/db/seed_data.py      # Seed sample data
 | `create_admin.py` | Create admin (07701791983 / Admin789) |
 | `seed_data.py` | Populate from seed_data.json |
 
-## Seed Data Setup
-
-**First time setup:**
-
-```bash
-cd scripts/db
-copy seed_data.example.json seed_data.json  # Windows
-# OR
-cp seed_data.example.json seed_data.json    # Linux/Mac
-```
-
-Then customize `seed_data.json` with your own data (optional).
 
 **Default accounts:**
 

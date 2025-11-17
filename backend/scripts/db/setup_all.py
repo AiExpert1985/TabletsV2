@@ -208,8 +208,6 @@ async def setup_all():
     # Step 3: Seed data
     script_dir = Path(__file__).parent
     seed_file = script_dir / "seed_data.json"
-    if not seed_file.exists():
-        seed_file = script_dir / "seed_data.example.json"
 
     if seed_file.exists():
         print(f"📂 Loading seed data from: {seed_file.name}")
