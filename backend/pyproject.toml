@@ -7,10 +7,25 @@ name = "tabletsv2-backend"
 version = "0.1.0"
 description = "TabletsV2 ERP Backend"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "fastapi==0.115.0",
+    "uvicorn[standard]==0.31.0",
+    "pydantic==2.9.2",
+    "pydantic-settings==2.5.2",
+    "python-multipart==0.0.12",
+    "sqlalchemy[asyncio]==2.0.35",
+    "asyncpg==0.29.0",
+    "aiosqlite==0.20.0",
+    "alembic==1.13.3",
+    "pyjwt==2.9.0",
+    "bcrypt==4.2.0",
+    "python-dotenv==1.0.1",
+    "pytest==8.3.2",
+    "pytest-asyncio==0.24.0",
+]
 
 [tool.setuptools]
-packages = ["core", "features", "features.auth", "features.company", "features.product", "features.authorization", "database_init"]
+packages = ["core", "features", "features.auth", "features.company", "features.product", "features.authorization", "scripts", "scripts.db", "scripts.admin"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

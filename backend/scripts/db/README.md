@@ -6,7 +6,9 @@ Simple database reset and seeding for development.
 
 ```bash
 cd backend
-python database_init/reset.py
+python scripts/db/reset.py
+# OR use the newer reset_database.py (more comprehensive)
+python scripts/db/reset_database.py
 ```
 
 That's it! The script reads data from `.example.json` files and populates the database.
@@ -14,10 +16,12 @@ That's it! The script reads data from `.example.json` files and populates the da
 ## Structure
 
 ```
-database_init/
-├── reset.py                        # Main script
-├── operations.py                   # Database operations
-└── data/                           # Seed data
+scripts/db/
+├── reset.py                        # Original reset script
+├── reset_database.py               # Newer comprehensive reset script
+├── seed_data.example.json          # All-in-one seed data (used by reset_database.py)
+├── operations.py                   # Database operations (used by reset.py)
+└── data/                           # Individual seed data files (used by reset.py)
     ├── system_admin.example.json   # System admin
     ├── companies.example.json      # Companies
     ├── users.example.json          # Users
