@@ -6,10 +6,14 @@ Example implementation showing company data isolation.
 import uuid
 from datetime import datetime, timezone
 from decimal import Decimal
+from typing import TYPE_CHECKING
 from sqlalchemy import String, Numeric, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from core.database import Base
 from features.auth.models import UUID
+
+if TYPE_CHECKING:
+    from features.company.models import Company
 
 
 class Product(Base):

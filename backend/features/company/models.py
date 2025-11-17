@@ -1,10 +1,15 @@
 """SQLAlchemy ORM models for company feature."""
 import uuid
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 from sqlalchemy import String, Boolean, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from core.database import Base
 from features.auth.models import UUID
+
+if TYPE_CHECKING:
+    from features.auth.models import User
+    from features.product.models import Product
 
 
 class Company(Base):

@@ -96,8 +96,10 @@ class CompanyRepository(ICompanyRepository):
         is_active: bool | None = None
     ) -> Company | None:
         """Update company."""
-        # Build update dict
-        update_data = {"updated_at": datetime.now(timezone.utc)}
+        # Build update dict with proper typing
+        update_data: dict[str, datetime | str | bool] = {
+            "updated_at": datetime.now(timezone.utc)
+        }
         if name is not None:
             update_data["name"] = name
         if is_active is not None:
