@@ -140,6 +140,8 @@ class AuthService:
 
         # 2. Get token from DB (check not revoked)
         token_id = payload.get("token_id")
+        if not token_id or not isinstance(token_id, str):
+            raise InvalidTokenException("Invalid token payload")
         db_token = await self.refresh_token_repo.get_by_token_id(token_id)
 
         if not db_token:
@@ -161,6 +163,7 @@ class AuthService:
             raise UserNotFoundException()
 
         # 5. Revoke old refresh token (one-time use)
+        # token_id already validated above, guaranteed to be str
         await self.refresh_token_repo.revoke(token_id)
 
         # 6. Generate new token pair
@@ -180,8 +183,9 @@ class AuthService:
             payload = verify_refresh_token(refresh_token)
             token_id = payload.get("token_id")
 
-            # Revoke token
-            await self.refresh_token_repo.revoke(token_id)
+            # Validate token_id before revoking
+            if token_id and isinstance(token_id, str):
+                await self.refresh_token_repo.revoke(token_id)
         except Exception:
             # Fail silently - token might already be invalid/revoked
             pass

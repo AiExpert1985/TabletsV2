@@ -1,83 +1,57 @@
-# Database Initialization
+# Database Scripts
 
-Simple database reset and seeding for development.
+All scripts for database initialization and management.
 
 ## Quick Start
 
 ```bash
 cd backend
-python scripts/db/reset.py
-# OR use the newer reset_database.py (more comprehensive)
-python scripts/db/reset_database.py
+
+# Complete setup (recommended)
+python scripts/db/setup_all.py
+
+# Or step by step
+python scripts/db/reset_db.py       # Reset database
+python scripts/db/create_admin.py   # Create admin
+python scripts/db/seed_data.py      # Seed sample data
 ```
 
-That's it! The script reads data from `.example.json` files and populates the database.
+## Scripts
 
-## Structure
+| Script | Purpose |
+|--------|---------|
+| `setup_all.py` | All-in-one: reset + admin + seed |
+| `reset_db.py` | Drop and recreate tables |
+| `create_admin.py` | Create admin (07701791983 / Admin789) |
+| `seed_data.py` | Populate from seed_data.json |
 
+## Seed Data Setup
+
+**First time setup:**
+
+```bash
+cd scripts/db
+copy seed_data.example.json seed_data.json  # Windows
+# OR
+cp seed_data.example.json seed_data.json    # Linux/Mac
 ```
-scripts/db/
-├── reset.py                        # Original reset script
-├── reset_database.py               # Newer comprehensive reset script
-├── seed_data.example.json          # All-in-one seed data (used by reset_database.py)
-├── operations.py                   # Database operations (used by reset.py)
-└── data/                           # Individual seed data files (used by reset.py)
-    ├── system_admin.example.json   # System admin
-    ├── companies.example.json      # Companies
-    ├── users.example.json          # Users
-    └── products.example.json       # Products
-```
 
-## Default Test Accounts
+Then customize `seed_data.json` with your own data (optional).
 
-The `.example.json` files include:
+**Default accounts:**
 
-**System Admin:**
-- Phone: `07700000000`
-- Password: `Admin123`
+- **System Admin:** 07701791983 / Admin789 (created by create_admin.py)
+- **Company Admin:** 07701111111 / Admin123 (from seed_data.json)
+- **Sales User:** 07702222222 / Sales123 (from seed_data.json)
+- **Inventory User:** 07703333333 / Inventory123 (from seed_data.json)
 
-**Company Admin (ACME Corp):**
-- Phone: `07701111111`
-- Password: `Admin123`
-
-**Users (ACME Corp):**
-- Sales: `07702222222` / `Sales123`
-- Inventory: `07703333333` / `Inventory123`
-- Accounting: `07704444444` / `Account123`
-
-**Sample Data:**
+**Sample data:**
 - 3 companies
 - 4 users
 - 8 products
 
 ## Customization
 
-Want different test data? Just edit the `.example.json` files in the `data/` folder.
+Edit `seed_data.json` to add your own companies, users, and products.
 
-**Example - Change admin password:**
-
-Edit `data/system_admin.example.json`:
-```json
-{
-  "phone_number": "07700000000",
-  "password": "MyNewPassword123",
-  "email": "admin@mycompany.com"
-}
-```
-
-**Example - Add more users:**
-
-Edit `data/users.example.json`, add more entries to the array.
-
-**Example - Add more products:**
-
-Edit `data/products.example.json`, add more entries to the array.
-
-## How It Works
-
-1. **Drops all tables** - Clean slate
-2. **Creates tables** - From current models
-3. **Reads .example.json files** - Loads test data
-4. **Seeds database** - Populates all entities
-
-Simple and straightforward!
+**Note:** `seed_data.json` is gitignored (your custom data stays local).
