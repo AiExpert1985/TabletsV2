@@ -18,8 +18,7 @@ class UserCreateRequest(BaseModel):
     password: str = Field(..., min_length=8, max_length=128)
     email: str | None = None
     company_id: str | None = None  # Required for non-system-admin users
-    role: str = "user"  # user, company_admin, system_admin
-    company_roles: list[str] = []  # e.g., ["accountant", "sales"]
+    role: str = "viewer"  # Role: system_admin, company_admin, accountant, etc.
     is_active: bool = True
 
 
@@ -30,6 +29,5 @@ class UserUpdateRequest(BaseModel):
     email: str | None = None
     password: str | None = Field(None, min_length=8, max_length=128)
     company_id: str | None = None
-    role: str | None = None
-    company_roles: list[str] | None = None
+    role: str | None = None  # Update user's role
     is_active: bool | None = None

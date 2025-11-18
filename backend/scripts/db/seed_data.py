@@ -25,8 +25,8 @@ from features.company.models import Company
 from features.product.models import Product
 from features.company.repository import CompanyRepository
 from features.company.service import CompanyService
-from features.auth.repository import UserRepository
-from features.auth.user_service import UserService
+from features.users.repository import UserRepository
+from features.users.service import UserService
 from features.product.repository import ProductRepository
 from features.product.service import ProductService
 from core.company_context import CompanyContext
@@ -85,8 +85,7 @@ async def seed_users(users_data: list[dict], companies: dict[str, Company]) -> l
                     phone_number=data["phone_number"],
                     password=data["password"],
                     company_id=str(company.id),
-                    role=data.get("role", "user"),
-                    company_roles=data.get("company_roles", []),
+                    role=data.get("role", "viewer"),
                     is_active=data.get("is_active", True),
                 )
                 users.append(user)

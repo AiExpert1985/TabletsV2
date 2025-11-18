@@ -27,7 +27,7 @@ sys.path.insert(0, str(backend_dir))
 from core.database import AsyncSessionLocal, engine, Base, init_db
 from core.security import hash_password, normalize_phone_number
 from features.auth.models import User, UserRole
-from features.auth.repository import UserRepository
+from features.users.repository import UserRepository
 from features.company.models import Company
 from features.product.models import Product
 
@@ -119,8 +119,7 @@ async def seed_users(users_data: list[dict], companies: dict[str, Company]) -> l
                     phone_number=normalize_phone_number(data["phone_number"]),
                     hashed_password=hash_password(data["password"]),
                     company_id=company.id,
-                    role=UserRole(data.get("role", "user")),
-                    company_roles=data.get("company_roles", []),
+                    role=UserRole(data.get("role", "viewer")),
                     is_active=data.get("is_active", True),
                     is_phone_verified=True,
                     created_at=datetime.now(timezone.utc),

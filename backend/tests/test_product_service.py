@@ -38,7 +38,7 @@ def company_ctx_regular():
         phone_number="+9647700000001",
         hashed_password="hashed",
         company_id=uuid4(),
-        role=UserRole.USER,
+        role=UserRole.VIEWER,
         is_active=True,
     )
     return CompanyContext(user=user)

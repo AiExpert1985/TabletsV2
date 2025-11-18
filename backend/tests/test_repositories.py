@@ -4,7 +4,8 @@ from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from features.auth.models import User, UserRole
-from features.auth.repository import UserRepository, RefreshTokenRepository
+from features.users.repository import UserRepository
+from features.auth.repository import RefreshTokenRepository
 from features.company.models import Company
 from features.company.repository import CompanyRepository
 from core.security import hash_password
@@ -29,14 +30,14 @@ class TestUserRepository:
             phone_number="9647700000010",
             hashed_password=hash_password("TestPass123"),
             company_id=str(test_company.id),
-            role="user",
+            role="viewer",
         )
 
         # Assert
         assert user.id is not None
         assert user.phone_number == "9647700000010"
         assert user.company_id == test_company.id
-        assert user.role == UserRole.USER
+        assert user.role == UserRole.VIEWER
         assert user.is_active is True
         assert user.created_at is not None
 
@@ -209,6 +210,7 @@ class TestUserRepository:
         updated_user = await user_repo.get_by_id(str(test_user.id))
 
         # Assert
+        assert updated_user is not None
         assert updated_user.is_active is False
 
     @pytest.mark.asyncio
@@ -224,7 +226,7 @@ class TestUserRepository:
             phone_number="9647700000099",
             hashed_password=hash_password("Test123"),
             company_id=str(test_company.id),
-            role="user",
+            role="viewer",
         )
         user_id = str(user.id)
         await db_session.commit()

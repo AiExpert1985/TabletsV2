@@ -8,10 +8,8 @@ from core.dependencies import get_db
 from core.security import verify_access_token
 from core.exceptions import InvalidTokenException, TokenExpiredException
 from features.auth.models import User
-from features.auth.repository import (
-    UserRepository,
-    RefreshTokenRepository,
-)
+from features.auth.repository import RefreshTokenRepository
+from features.users.repository import UserRepository
 from features.auth.auth_services import AuthService
 
 # HTTP Bearer token scheme

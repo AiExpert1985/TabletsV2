@@ -91,20 +91,6 @@ class Permission(str, enum.Enum):
     EDIT_SYSTEM_SETTINGS = "settings.edit"
 
 
-class CompanyRole(str, enum.Enum):
-    """
-    Company-level roles for organization-specific access control.
-
-    These roles are scoped to a single company.
-    """
-    ADMIN = "admin"                    # Company administrator
-    ACCOUNTANT = "accountant"          # Financial operations
-    SALES_MANAGER = "sales_manager"    # Sales operations
-    WAREHOUSE_KEEPER = "warehouse_keeper"  # Warehouse operations
-    SALESPERSON = "salesperson"        # Limited sales access
-    VIEWER = "viewer"                  # Read-only access
-
-
 # ============================================================================
 # Permission Groups - Organized sets for easier management
 # ============================================================================

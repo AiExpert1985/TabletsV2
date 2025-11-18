@@ -14,10 +14,21 @@ if TYPE_CHECKING:
 
 
 class UserRole(str, enum.Enum):
-    """User role enum."""
-    SYSTEM_ADMIN = "system_admin"
-    COMPANY_ADMIN = "company_admin"
-    USER = "user"
+    """
+    User roles in the system.
+
+    Single role per user - maps directly to permission sets.
+    """
+    # System-level role
+    SYSTEM_ADMIN = "system_admin"  # Full access, manages companies
+
+    # Company-level roles
+    COMPANY_ADMIN = "company_admin"      # Full access within company
+    ACCOUNTANT = "accountant"            # Financial operations & reports
+    SALES_MANAGER = "sales_manager"      # Manage sales & salespeople
+    WAREHOUSE_KEEPER = "warehouse_keeper"  # Inventory & warehouse operations
+    SALESPERSON = "salesperson"          # Create invoices, view products
+    VIEWER = "viewer"                    # Read-only access
 
 
 class UUID(TypeDecorator):
@@ -115,14 +126,7 @@ class User(Base):
     )
     role: Mapped[UserRole] = mapped_column(
         Enum(UserRole, native_enum=False, length=50),
-        default=UserRole.USER,
-        nullable=False
-    )
-
-    # Authorization: Multiple company roles for granular permissions
-    company_roles: Mapped[list[str]] = mapped_column(
-        JSONList,
-        default=list,
+        default=UserRole.VIEWER,
         nullable=False
     )
 

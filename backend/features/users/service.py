@@ -1,7 +1,7 @@
 """Business logic for user management (system admin operations)."""
 import uuid
 from features.auth.models import User, UserRole
-from features.auth.repository import UserRepository
+from features.users.repository import UserRepository
 from core.security import hash_password, normalize_phone_number
 from core.exceptions import (
     PhoneAlreadyExistsException,
@@ -23,7 +23,6 @@ class UserService:
         password: str,
         company_id: str | None,
         role: str,
-        company_roles: list[str] | None = None,
         email: str | None = None,
         is_active: bool = True,
     ) -> User:
@@ -32,7 +31,7 @@ class UserService:
 
         Business rules:
         - System admin must have company_id = None
-        - Regular users and company admins must have a company_id
+        - Other roles must have a company_id
         - Phone numbers are unique across the system
         - Passwords are hashed with bcrypt
 
@@ -40,8 +39,7 @@ class UserService:
             phone_number: Phone number (will be normalized)
             password: Plain text password (will be hashed)
             company_id: UUID of company (None for system admin)
-            role: User role (system_admin, company_admin, user)
-            company_roles: List of company-specific roles
+            role: User role (e.g., system_admin, company_admin, accountant, viewer)
             email: Optional email address
             is_active: Whether user is active (default: True)
 
@@ -64,8 +62,8 @@ class UserService:
         if user_role == UserRole.SYSTEM_ADMIN and company_id:
             raise ValueError("System admin cannot have a company_id")
 
-        if user_role in [UserRole.USER, UserRole.COMPANY_ADMIN] and not company_id:
-            raise ValueError("Regular users and company admins must have a company_id")
+        if user_role != UserRole.SYSTEM_ADMIN and not company_id:
+            raise ValueError("Non-system-admin users must have a company_id")
 
         # 4. Hash password
         hashed_password = hash_password(password)
@@ -77,7 +75,6 @@ class UserService:
             email=email,
             company_id=uuid.UUID(company_id) if company_id else None,
             role=user_role,
-            company_roles=company_roles or [],
             is_active=is_active,
         )
 
@@ -125,7 +122,6 @@ class UserService:
         email: str | None = None,
         company_id: str | None = None,
         role: str | None = None,
-        company_roles: list[str] | None = None,
         is_active: bool | None = None,
     ) -> User:
         """
@@ -143,7 +139,6 @@ class UserService:
             email: New email (optional)
             company_id: New company_id (optional)
             role: New role (optional)
-            company_roles: New company roles (optional)
             is_active: New active status (optional)
 
         Returns:
@@ -183,8 +178,6 @@ class UserService:
         # 6. Update other fields
         if email is not None:
             user.email = email
-        if company_roles is not None:
-            user.company_roles = company_roles
         if is_active is not None:
             user.is_active = is_active
 

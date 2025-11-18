@@ -4,17 +4,15 @@ Base repository with company-aware filtering support.
 Provides reusable patterns for multi-tenant data access.
 """
 from __future__ import annotations
-from typing import TypeVar, Generic, Type, Sequence, TYPE_CHECKING
+from typing import TypeVar, Generic, Type, Sequence, Any
 from uuid import UUID
 from sqlalchemy import select, Select
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.company_context import CompanyContext
 
-if TYPE_CHECKING:
-    from core.database import Base
-
-# Use string literal for bound to satisfy strict type checkers
-ModelType = TypeVar("ModelType", bound="Base")
+# TypeVar for generic repository
+# No bound since declarative_base() creates runtime class that type checkers can't handle
+ModelType = TypeVar("ModelType")
 
 
 class CompanyAwareRepository(Generic[ModelType]):
@@ -109,7 +107,7 @@ class CompanyAwareRepository(Generic[ModelType]):
         Raises:
             HTTPException: 403 if trying to access another company's data
         """
-        query = self._build_base_query().where(self.model.id == id)
+        query = self._build_base_query().where(self.model.id == id)  # type: ignore[attr-defined]
         query = self._apply_company_filter(query, company_ctx)
 
         result = await self.db.execute(query)
@@ -149,4 +147,4 @@ class CompanyAwareRepository(Generic[ModelType]):
             HTTPException: 403 if record belongs to different company
         """
         if hasattr(record, 'company_id'):
-            company_ctx.ensure_company_access(record.company_id)
+            company_ctx.ensure_company_access(record.company_id)  # type: ignore[attr-defined]
