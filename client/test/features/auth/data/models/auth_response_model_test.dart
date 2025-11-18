@@ -38,14 +38,8 @@ void main() {
         expect(authResponse.user.role, 'user');
 
         // Token fields
-        expect(
-          authResponse.tokens.accessToken,
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.access',
-        );
-        expect(
-          authResponse.tokens.refreshToken,
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh',
-        );
+        expect(authResponse.tokens.accessToken, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.access');
+        expect(authResponse.tokens.refreshToken, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh');
         expect(authResponse.tokens.tokenType, 'bearer');
         expect(authResponse.tokens.expiresIn, 900);
       });
@@ -99,7 +93,6 @@ void main() {
           email: 'test@example.com',
           companyId: '223e4567-e89b-12d3-a456-426614174000',
           role: 'user',
-          companyRoles: ['sales'],
           permissions: ['read:products'],
           isActive: true,
           isPhoneVerified: true,
@@ -124,10 +117,7 @@ void main() {
 
         // Check tokens object
         expect(json['tokens'], isA<Map<String, dynamic>>());
-        expect(
-          json['tokens']['access_token'],
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.access',
-        );
+        expect(json['tokens']['access_token'], 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.access');
       });
     });
 
@@ -137,28 +127,13 @@ void main() {
         final json = authResponse.toJson();
 
         // User data preserved
-        expect(
-          json['user']['id'],
-          validJson['user']['id'],
-        );
-        expect(
-          json['user']['phone_number'],
-          validJson['user']['phone_number'],
-        );
-        expect(
-          json['user']['role'],
-          validJson['user']['role'],
-        );
+        expect(json['user']['id'], validJson['user']['id']);
+        expect(json['user']['phone_number'], validJson['user']['phone_number']);
+        expect(json['user']['role'], validJson['user']['role']);
 
         // Token data preserved
-        expect(
-          json['tokens']['access_token'],
-          validJson['tokens']['access_token'],
-        );
-        expect(
-          json['tokens']['token_type'],
-          validJson['tokens']['token_type'],
-        );
+        expect(json['tokens']['access_token'], validJson['tokens']['access_token']);
+        expect(json['tokens']['token_type'], validJson['tokens']['token_type']);
       });
     });
 
