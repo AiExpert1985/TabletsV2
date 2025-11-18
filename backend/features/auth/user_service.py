@@ -81,10 +81,8 @@ class UserService:
             is_active=is_active,
         )
 
-        # 6. Save to repository (repository handles DB transaction)
-        self.user_repo.db.add(user)
-        await self.user_repo.db.flush()
-        await self.user_repo.db.refresh(user)
+        # 6. Save to repository
+        user = await self.user_repo.save(user)
 
         return user
 

@@ -26,6 +26,11 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
+    async def save(self, user: User) -> User:
+        """Save user model to database."""
+        pass
+
+    @abstractmethod
     async def get_by_phone(self, phone_number: str) -> User | None:
         """Get user by phone number."""
         pass
@@ -118,6 +123,13 @@ class UserRepository(IUserRepository):
             company_id=uuid.UUID(company_id) if company_id else None,
             role=UserRole(role),
         )
+        self.db.add(user)
+        await self.db.flush()
+        await self.db.refresh(user)
+        return user
+
+    async def save(self, user: User) -> User:
+        """Save user model to database."""
         self.db.add(user)
         await self.db.flush()
         await self.db.refresh(user)

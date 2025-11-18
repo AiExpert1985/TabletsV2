@@ -11,7 +11,7 @@ from features.auth.models import UserRole
 from features.auth.repository import UserRepository
 from features.auth.user_service import UserService
 from features.auth.dependencies import CurrentUser
-from features.auth.routes import build_user_response
+from features.auth.auth_routes import build_user_response
 from core.database import get_db
 from core.exceptions import (
     PhoneAlreadyExistsException,

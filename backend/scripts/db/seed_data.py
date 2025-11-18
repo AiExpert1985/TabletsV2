@@ -122,7 +122,7 @@ async def seed_products(products_data: list[dict], companies: dict[str, Company]
                 role=UserRole.SYSTEM_ADMIN,
                 is_active=True,
             )
-            company_ctx = CompanyContext(user=system_admin, should_filter=False)
+            company_ctx = CompanyContext(user=system_admin)
 
             products = []
             for data in products_data:

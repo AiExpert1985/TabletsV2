@@ -41,7 +41,7 @@ def company_ctx_regular():
         role=UserRole.USER,
         is_active=True,
     )
-    return CompanyContext(user=user, should_filter=True)
+    return CompanyContext(user=user)
 
 
 @pytest.fixture
@@ -54,7 +54,7 @@ def company_ctx_admin():
         role=UserRole.SYSTEM_ADMIN,
         is_active=True,
     )
-    return CompanyContext(user=user, should_filter=False)
+    return CompanyContext(user=user)
 
 
 class TestProductService:

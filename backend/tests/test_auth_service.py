@@ -2,7 +2,7 @@
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from features.auth.services import AuthService, TokenPair
+from features.auth.auth_services import AuthService, TokenPair
 from features.auth.models import User
 from features.auth.repository import UserRepository, RefreshTokenRepository
 from core.exceptions import (
@@ -14,27 +14,6 @@ from core.exceptions import (
     PasswordTooWeakException,
 )
 from core.security import verify_password, verify_refresh_token, hash_password
-
-
-# ============================================================================
-# Test Signup
-# ============================================================================
-
-class TestAuthServiceSignup:
-    """Test user signup functionality (PUBLIC SIGNUP DISABLED)."""
-
-    @pytest.mark.asyncio
-    async def test_public_signup_is_disabled(
-        self,
-        auth_service: AuthService,
-    ):
-        """Public signup is completely disabled."""
-        # Act & Assert - Any signup attempt should fail
-        with pytest.raises(ValueError, match="Public signup is disabled"):
-            await auth_service.signup(
-                phone_number="9647700000000",
-                password="StrongPassword123",
-            )
 
 
 # ============================================================================

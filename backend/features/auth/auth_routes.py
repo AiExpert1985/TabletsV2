@@ -2,8 +2,6 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from features.auth.schemas import (
-    SignupRequest,
-    SignupResponse,
     LoginRequest,
     LoginResponse,
     RefreshTokenRequest,
@@ -12,7 +10,7 @@ from features.auth.schemas import (
     MessageResponse,
 )
 from features.auth.models import User
-from features.auth.services import AuthService
+from features.auth.auth_services import AuthService
 from features.auth.dependencies import get_auth_service, CurrentUser
 from features.authorization.service import create_authorization_service
 from core.exceptions import (
@@ -113,37 +111,6 @@ def handle_auth_exception(exc: Exception) -> HTTPException:
 # ============================================================================
 # Routes
 # ============================================================================
-
-@router.post("/signup", response_model=SignupResponse, status_code=status.HTTP_201_CREATED)
-async def signup(
-    request: SignupRequest,
-    auth_service: Annotated[AuthService, Depends(get_auth_service)],
-):
-    """
-    Register a new user.
-
-    - **phone_number**: Iraqi mobile number (e.g., 07501234567 or +9647501234567)
-    - **password**: Minimum 8 characters, must contain uppercase, lowercase, and digit
-    - **password_confirm**: Must match password
-    """
-    try:
-        user, tokens = await auth_service.signup(
-            phone_number=request.phone_number,
-            password=request.password,
-        )
-
-        return SignupResponse(
-            user=build_user_response(user),
-            tokens=TokenResponse(
-                access_token=tokens.access_token,
-                refresh_token=tokens.refresh_token,
-                token_type=tokens.token_type,
-                expires_in=tokens.expires_in,
-            ),
-        )
-    except Exception as exc:
-        raise handle_auth_exception(exc)
-
 
 @router.post("/login", response_model=LoginResponse)
 async def login(
