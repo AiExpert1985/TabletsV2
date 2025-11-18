@@ -32,12 +32,15 @@ def get_user_permissions(user: User) -> set[Permission]:
     """
     # Convert company_roles (list of strings) to CompanyRole enums
     company_roles: list[CompanyRole] = []
-    for role_str in user.company_roles:
-        try:
-            company_roles.append(CompanyRole(role_str))
-        except ValueError:
-            # Skip invalid role strings
-            continue
+
+    # Handle None or empty company_roles
+    if user.company_roles:
+        for role_str in user.company_roles:
+            try:
+                company_roles.append(CompanyRole(role_str))
+            except ValueError:
+                # Skip invalid role strings
+                continue
 
     # Get all permissions using existing role_permissions mapping
     return get_all_permissions_for_user(user.role, company_roles)
