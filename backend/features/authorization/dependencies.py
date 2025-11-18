@@ -4,11 +4,12 @@ FastAPI dependencies for authorization.
 Provides permission checking for routes.
 """
 from typing import Annotated
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 from features.auth.dependencies import CurrentUser
 from features.authorization.service import AuthorizationService, create_authorization_service
 from features.authorization.permissions import Permission
 from features.logging.logger import get_logger
+from core.exceptions import PermissionDeniedException
 
 logger = get_logger(__name__)
 
@@ -58,10 +59,7 @@ def require_permission(permission: Permission):
                 f"Permission denied: User {auth_service.user.id if auth_service.user else 'None'} "
                 f"attempted to access {permission.value}"
             )
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Permission denied: {permission.value} required"
-            )
+            raise PermissionDeniedException(f"Missing required permission: {permission.value}")
 
     return permission_checker
 
@@ -93,9 +91,9 @@ def require_any_permission(*permissions: Permission):
                 f"Permission denied: User {auth_service.user.id if auth_service.user else 'None'} "
                 f"needs one of: {[p.value for p in permissions]}"
             )
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Permission denied: requires one of {[p.value for p in permissions]}"
+            perm_values = [p.value for p in permissions]
+            raise PermissionDeniedException(
+                f"Missing required permissions. Need one of: {', '.join(perm_values)}"
             )
 
     return permission_checker
@@ -128,9 +126,9 @@ def require_all_permissions(*permissions: Permission):
                 f"Permission denied: User {auth_service.user.id if auth_service.user else 'None'} "
                 f"needs all of: {[p.value for p in permissions]}"
             )
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Permission denied: requires all of {[p.value for p in permissions]}"
+            perm_values = [p.value for p in permissions]
+            raise PermissionDeniedException(
+                f"Missing required permissions: {', '.join(perm_values)}"
             )
 
     return permission_checker
