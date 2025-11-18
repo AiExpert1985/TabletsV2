@@ -11,8 +11,7 @@ void main() {
       'phone_number': '9647701234567',
       'email': 'test@example.com',
       'company_id': '223e4567-e89b-12d3-a456-426614174000',
-      'role': 'user',
-      'company_roles': ['sales', 'manager'],
+      'role': 'salesperson',
       'permissions': ['read:products', 'write:products'],
       'is_active': true,
       'is_phone_verified': true,
@@ -28,8 +27,7 @@ void main() {
         expect(user.phoneNumber, '9647701234567');
         expect(user.email, 'test@example.com');
         expect(user.companyId, '223e4567-e89b-12d3-a456-426614174000');
-        expect(user.role, 'user');
-        expect(user.companyRoles, ['sales', 'manager']);
+        expect(user.role, 'salesperson');
         expect(user.permissions, ['read:products', 'write:products']);
         expect(user.isActive, true);
         expect(user.isPhoneVerified, true);
@@ -44,7 +42,6 @@ void main() {
           'email': null,
           'company_id': null,
           'role': 'system_admin',
-          'company_roles': null,
           'permissions': null,
           'is_active': true,
           'is_phone_verified': true,
@@ -56,7 +53,6 @@ void main() {
 
         expect(user.email, null);
         expect(user.companyId, null);
-        expect(user.companyRoles, []);
         expect(user.permissions, []);
         expect(user.lastLoginAt, null);
       });
@@ -68,7 +64,6 @@ void main() {
           'email': 'admin@example.com',
           'company_id': null,
           'role': 'system_admin',
-          'company_roles': [],
           'permissions': ['*'],
           'is_active': true,
           'is_phone_verified': true,
@@ -83,14 +78,13 @@ void main() {
         expect(user.permissions, ['*']);
       });
 
-      test('handles empty company_roles and permissions arrays', () {
+      test('handles empty permissions array', () {
         final json = {
           'id': '123e4567-e89b-12d3-a456-426614174000',
           'phone_number': '9647701234567',
           'email': null,
           'company_id': '223e4567-e89b-12d3-a456-426614174000',
-          'role': 'user',
-          'company_roles': [],
+          'role': 'viewer',
           'permissions': [],
           'is_active': true,
           'is_phone_verified': false,
@@ -100,7 +94,6 @@ void main() {
 
         final user = UserModel.fromJson(json);
 
-        expect(user.companyRoles, []);
         expect(user.permissions, []);
       });
 
@@ -122,8 +115,7 @@ void main() {
           phoneNumber: '9647701234567',
           email: 'test@example.com',
           companyId: '223e4567-e89b-12d3-a456-426614174000',
-          role: 'user',
-          companyRoles: ['sales', 'manager'],
+          role: 'salesperson',
           permissions: ['read:products', 'write:products'],
           isActive: true,
           isPhoneVerified: true,
@@ -137,8 +129,7 @@ void main() {
         expect(json['phone_number'], '9647701234567');
         expect(json['email'], 'test@example.com');
         expect(json['company_id'], '223e4567-e89b-12d3-a456-426614174000');
-        expect(json['role'], 'user');
-        expect(json['company_roles'], ['sales', 'manager']);
+        expect(json['role'], 'salesperson');
         expect(json['permissions'], ['read:products', 'write:products']);
         expect(json['is_active'], true);
         expect(json['is_phone_verified'], true);
@@ -153,7 +144,6 @@ void main() {
           email: null,
           companyId: null,
           role: 'system_admin',
-          companyRoles: [],
           permissions: ['*'],
           isActive: true,
           isPhoneVerified: true,
@@ -165,7 +155,6 @@ void main() {
 
         expect(json['email'], null);
         expect(json['company_id'], null);
-        expect(json['company_roles'], []);
         expect(json['last_login_at'], null);
       });
 
@@ -173,7 +162,7 @@ void main() {
         final user = UserModel(
           id: '123e4567-e89b-12d3-a456-426614174000',
           phoneNumber: '9647701234567',
-          role: 'user',
+          role: 'viewer',
           isActive: true,
           isPhoneVerified: true,
           createdAt: testDateTime,
@@ -195,7 +184,6 @@ void main() {
         expect(json['email'], validJson['email']);
         expect(json['company_id'], validJson['company_id']);
         expect(json['role'], validJson['role']);
-        expect(json['company_roles'], validJson['company_roles']);
         expect(json['permissions'], validJson['permissions']);
         expect(json['is_active'], validJson['is_active']);
         expect(json['is_phone_verified'], validJson['is_phone_verified']);
@@ -209,7 +197,7 @@ void main() {
         final user = UserModel(
           id: '123e4567-e89b-12d3-a456-426614174000',
           phoneNumber: '9647701234567',
-          role: 'user',
+          role: 'viewer',
           isActive: true,
           isPhoneVerified: true,
           createdAt: testDateTime,

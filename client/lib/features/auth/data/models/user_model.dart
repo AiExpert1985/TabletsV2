@@ -8,7 +8,6 @@ class UserModel extends User {
     super.email,
     super.companyId,
     required super.role,
-    super.companyRoles = const [],
     super.permissions = const [],
     required super.isActive,
     required super.isPhoneVerified,
@@ -24,10 +23,6 @@ class UserModel extends User {
       email: json['email'] as String?,
       companyId: json['company_id'] as String?,
       role: json['role'] as String,
-      companyRoles: (json['company_roles'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          [],
       permissions: (json['permissions'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
@@ -49,7 +44,6 @@ class UserModel extends User {
       'email': email,
       'company_id': companyId,
       'role': role,
-      'company_roles': companyRoles,
       'permissions': permissions,
       'is_active': isActive,
       'is_phone_verified': isPhoneVerified,

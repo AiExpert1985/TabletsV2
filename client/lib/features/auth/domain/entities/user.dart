@@ -4,8 +4,7 @@ class User {
   final String phoneNumber;
   final String? email;
   final String? companyId;  // NULL for system admin
-  final String role;  // system_admin, company_admin, user
-  final List<String> companyRoles;  // e.g., ["accountant", "sales"]
+  final String role;  // system_admin, company_admin, accountant, sales_manager, warehouse_keeper, salesperson, viewer
   final List<String> permissions;  // Aggregated permissions
   final bool isActive;
   final bool isPhoneVerified;
@@ -18,7 +17,6 @@ class User {
     this.email,
     this.companyId,
     required this.role,
-    this.companyRoles = const [],
     this.permissions = const [],
     required this.isActive,
     required this.isPhoneVerified,
@@ -28,6 +26,9 @@ class User {
 
   /// Check if user is system admin
   bool get isSystemAdmin => role == 'system_admin';
+
+  /// Check if user is company admin
+  bool get isCompanyAdmin => role == 'company_admin';
 
   /// Check if user has a specific permission
   bool hasPermission(String permission) => permissions.contains(permission);
