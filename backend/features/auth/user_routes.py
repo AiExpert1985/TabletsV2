@@ -1,5 +1,4 @@
 """User management routes - System Admin only."""
-import uuid
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,12 +7,17 @@ from features.auth.schemas import (
     UserUpdateRequest,
     UserResponse,
 )
-from features.auth.models import User, UserRole
+from features.auth.models import UserRole
 from features.auth.repository import UserRepository
+from features.auth.user_service import UserService
 from features.auth.dependencies import CurrentUser
-from features.auth.services import hash_password
 from features.auth.routes import build_user_response
 from core.database import get_db
+from core.exceptions import (
+    PhoneAlreadyExistsException,
+    UserNotFoundException,
+    AppException,
+)
 
 
 router = APIRouter(prefix="/users", tags=["User Management"])
@@ -23,11 +27,12 @@ router = APIRouter(prefix="/users", tags=["User Management"])
 # Dependencies
 # ============================================================================
 
-async def get_user_repository(
+async def get_user_service(
     db: Annotated[AsyncSession, Depends(get_db)]
-) -> UserRepository:
-    """Get user repository."""
-    return UserRepository(db)
+) -> UserService:
+    """Get user service."""
+    user_repo = UserRepository(db)
+    return UserService(user_repo)
 
 
 async def require_system_admin(current_user: CurrentUser) -> None:
@@ -46,7 +51,7 @@ async def require_system_admin(current_user: CurrentUser) -> None:
 @router.get("", response_model=list[UserResponse])
 async def get_users(
     _: Annotated[None, Depends(require_system_admin)],
-    user_repo: Annotated[UserRepository, Depends(get_user_repository)],
+    user_service: Annotated[UserService, Depends(get_user_service)],
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum records to return")
 ):
@@ -55,7 +60,7 @@ async def get_users(
 
     System admin can see all users across all companies.
     """
-    users = await user_repo.get_all(skip, limit)
+    users = await user_service.list_users(skip, limit)
     return [build_user_response(user) for user in users]
 
 
@@ -63,25 +68,25 @@ async def get_users(
 async def get_user(
     user_id: str,
     _: Annotated[None, Depends(require_system_admin)],
-    user_repo: Annotated[UserRepository, Depends(get_user_repository)]
+    user_service: Annotated[UserService, Depends(get_user_service)]
 ):
     """Get user by ID (system admin only)."""
-    user = await user_repo.get_by_id(user_id)
-
-    if not user:
+    try:
+        user = await user_service.get_user(user_id)
+        return build_user_response(user)
+    except UserNotFoundException:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
-
-    return build_user_response(user)
 
 
 @router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
     request: UserCreateRequest,
     _: Annotated[None, Depends(require_system_admin)],
-    user_repo: Annotated[UserRepository, Depends(get_user_repository)]
+    user_service: Annotated[UserService, Depends(get_user_service)],
+    db: Annotated[AsyncSession, Depends(get_db)]
 ):
     """
     Create a new user (system admin only).
@@ -90,46 +95,30 @@ async def create_user(
     - For system admin, company_id must be None
     - Password is permanent (no forced change on first login)
     """
-    # Validate phone number uniqueness
-    if await user_repo.phone_exists(request.phone_number):
+    try:
+        user = await user_service.create_user(
+            phone_number=request.phone_number,
+            password=request.password,
+            company_id=request.company_id,
+            role=request.role,
+            company_roles=request.company_roles,
+            email=request.email,
+            is_active=request.is_active,
+        )
+
+        await db.commit()
+        return build_user_response(user)
+
+    except PhoneAlreadyExistsException as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Phone number already exists"
+            detail=exc.message
         )
-
-    # Validate role and company_id combination
-    if request.role == "system_admin" and request.company_id:
+    except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="System admin cannot have a company_id"
+            detail=str(exc)
         )
-
-    if request.role in ["user", "company_admin"] and not request.company_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Regular users and company admins must have a company_id"
-        )
-
-    # Hash password
-    hashed_password = hash_password(request.password)
-
-    # Create user
-    user = User(
-        phone_number=request.phone_number,
-        hashed_password=hashed_password,
-        email=request.email,
-        company_id=uuid.UUID(request.company_id) if request.company_id else None,
-        role=UserRole(request.role),
-        company_roles=request.company_roles,
-        is_active=request.is_active
-    )
-
-    user_repo.db.add(user)
-    await user_repo.db.flush()
-    await user_repo.db.refresh(user)
-    await user_repo.db.commit()
-
-    return build_user_response(user)
 
 
 @router.put("/{user_id}", response_model=UserResponse)
@@ -137,51 +126,43 @@ async def update_user(
     user_id: str,
     request: UserUpdateRequest,
     _: Annotated[None, Depends(require_system_admin)],
-    user_repo: Annotated[UserRepository, Depends(get_user_repository)]
+    user_service: Annotated[UserService, Depends(get_user_service)],
+    db: Annotated[AsyncSession, Depends(get_db)]
 ):
     """Update user (system admin only)."""
-    user = await user_repo.get_by_id(user_id)
+    try:
+        # Get only provided fields
+        update_data = request.model_dump(exclude_unset=True)
 
-    if not user:
+        user = await user_service.update_user(
+            user_id=user_id,
+            phone_number=update_data.get("phone_number"),
+            password=update_data.get("password"),
+            email=update_data.get("email"),
+            company_id=update_data.get("company_id"),
+            role=update_data.get("role"),
+            company_roles=update_data.get("company_roles"),
+            is_active=update_data.get("is_active"),
+        )
+
+        await db.commit()
+        return build_user_response(user)
+
+    except UserNotFoundException:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
-
-    # Update fields (only provided fields)
-    update_data = request.model_dump(exclude_unset=True)
-
-    # Special handling for password
-    if "password" in update_data:
-        user.hashed_password = hash_password(update_data["password"])
-        del update_data["password"]
-
-    # Special handling for role and company_id
-    if "role" in update_data:
-        new_role = UserRole(update_data["role"])
-        if new_role == UserRole.SYSTEM_ADMIN and user.company_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot make user with company_id a system admin"
-            )
-        user.role = new_role
-        del update_data["role"]
-
-    if "company_id" in update_data:
-        if update_data["company_id"]:
-            user.company_id = uuid.UUID(update_data["company_id"])
-        else:
-            user.company_id = None
-        del update_data["company_id"]
-
-    # Update remaining fields
-    for field, value in update_data.items():
-        setattr(user, field, value)
-
-    user = await user_repo.update(user)
-    await user_repo.db.commit()
-
-    return build_user_response(user)
+    except PhoneAlreadyExistsException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=exc.message
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc)
+        )
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -189,23 +170,21 @@ async def delete_user(
     user_id: str,
     current_user: CurrentUser,
     _: Annotated[None, Depends(require_system_admin)],
-    user_repo: Annotated[UserRepository, Depends(get_user_repository)]
+    user_service: Annotated[UserService, Depends(get_user_service)],
+    db: Annotated[AsyncSession, Depends(get_db)]
 ):
     """Delete user (system admin only)."""
-    # Prevent deleting yourself
-    if str(current_user.id) == user_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot delete yourself"
-        )
+    try:
+        await user_service.delete_user(user_id, str(current_user.id))
+        await db.commit()
 
-    user = await user_repo.get_by_id(user_id)
-
-    if not user:
+    except UserNotFoundException:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
-
-    await user_repo.delete(user)
-    await user_repo.db.commit()
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc)
+        )

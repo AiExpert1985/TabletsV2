@@ -18,9 +18,10 @@ backend_dir = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(backend_dir))
 
 from core.database import AsyncSessionLocal, init_db
-from core.security import hash_password, normalize_phone_number
 from features.auth.repository import UserRepository
+from features.auth.user_service import UserService
 from features.auth.models import UserRole
+from core.exceptions import PhoneAlreadyExistsException
 
 
 # Hardcoded credentials
@@ -40,21 +41,15 @@ async def create_admin():
 
     async with AsyncSessionLocal() as session:
         try:
+            # Create service
             user_repo = UserRepository(session)
+            user_service = UserService(user_repo)
 
-            # Normalize phone
-            normalized_phone = normalize_phone_number(ADMIN_PHONE)
-
-            # Check if already exists
-            if await user_repo.phone_exists(normalized_phone):
-                print(f"❌ Admin with phone {normalized_phone} already exists!")
-                return 1
-
-            # Create admin
+            # Create admin using service
             print("Creating system admin...")
-            user = await user_repo.create(
-                phone_number=normalized_phone,
-                hashed_password=hash_password(ADMIN_PASSWORD),
+            user = await user_service.create_user(
+                phone_number=ADMIN_PHONE,
+                password=ADMIN_PASSWORD,
                 company_id=None,  # System admin has no company
                 role=UserRole.SYSTEM_ADMIN.value,
             )
@@ -74,6 +69,9 @@ async def create_admin():
 
             return 0
 
+        except PhoneAlreadyExistsException:
+            print(f"❌ Admin with phone {ADMIN_PHONE} already exists!")
+            return 1
         except Exception as e:
             await session.rollback()
             print(f"❌ Error: {e}")

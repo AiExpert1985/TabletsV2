@@ -13,25 +13,26 @@ from core.company_context import CompanyCtx
 from features.authorization.permissions import Permission
 from features.authorization.dependencies import require_permission
 from features.product.repository import ProductRepository
+from features.product.service import ProductService, ProductAlreadyExistsException, ProductNotFoundException
 from features.product.schemas import ProductCreateRequest, ProductUpdateRequest, ProductResponse
-from features.product.models import Product
 from features.logging.logger import get_logger
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/products", tags=["products"])
 
 
-def get_product_repository(
+def get_product_service(
     db: Annotated[AsyncSession, Depends(get_db)]
-) -> ProductRepository:
-    """Get product repository dependency."""
-    return ProductRepository(db)
+) -> ProductService:
+    """Get product service dependency."""
+    product_repo = ProductRepository(db)
+    return ProductService(product_repo)
 
 
 @router.get("", response_model=list[ProductResponse])
 async def get_products(
     company_ctx: CompanyCtx,
-    product_repo: Annotated[ProductRepository, Depends(get_product_repository)],
+    product_service: Annotated[ProductService, Depends(get_product_service)],
     _: Annotated[None, Depends(require_permission(Permission.VIEW_PRODUCTS))],
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000)
@@ -51,7 +52,7 @@ async def get_products(
         f"(company_filter={'ON' if company_ctx.should_filter else 'OFF'})"
     )
 
-    products = await product_repo.get_all_for_company(company_ctx, skip, limit)
+    products = await product_service.list_products(company_ctx, skip, limit)
     return [ProductResponse.model_validate(p) for p in products]
 
 
@@ -59,7 +60,7 @@ async def get_products(
 async def search_products(
     search: str,
     company_ctx: CompanyCtx,
-    product_repo: Annotated[ProductRepository, Depends(get_product_repository)],
+    product_service: Annotated[ProductService, Depends(get_product_service)],
     _: Annotated[None, Depends(require_permission(Permission.VIEW_PRODUCTS))],
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000)
@@ -72,14 +73,14 @@ async def search_products(
         - skip: Pagination offset
         - limit: Pagination limit
     """
-    products = await product_repo.search_products(search, company_ctx, skip, limit)
+    products = await product_service.search_products(search, company_ctx, skip, limit)
     return [ProductResponse.model_validate(p) for p in products]
 
 
 @router.get("/low-stock", response_model=list[ProductResponse])
 async def get_low_stock_products(
     company_ctx: CompanyCtx,
-    product_repo: Annotated[ProductRepository, Depends(get_product_repository)],
+    product_service: Annotated[ProductService, Depends(get_product_service)],
     _: Annotated[None, Depends(require_permission(Permission.VIEW_PRODUCTS))]
 ):
     """
@@ -87,7 +88,7 @@ async def get_low_stock_products(
 
     Useful for warehouse management alerts.
     """
-    products = await product_repo.get_low_stock_products(company_ctx)
+    products = await product_service.get_low_stock_products(company_ctx)
     return [ProductResponse.model_validate(p) for p in products]
 
 
@@ -95,7 +96,7 @@ async def get_low_stock_products(
 async def get_product(
     product_id: UUID,
     company_ctx: CompanyCtx,
-    product_repo: Annotated[ProductRepository, Depends(get_product_repository)],
+    product_service: Annotated[ProductService, Depends(get_product_service)],
     _: Annotated[None, Depends(require_permission(Permission.VIEW_PRODUCTS))]
 ):
     """
@@ -110,22 +111,21 @@ async def get_product(
         - 404: Product not found OR belongs to different company
               (Same 404 for security - no company enumeration)
     """
-    product = await product_repo.get_by_id_for_company(product_id, company_ctx)
-
-    if not product:
+    try:
+        product = await product_service.get_product(product_id, company_ctx)
+        return ProductResponse.model_validate(product)
+    except ProductNotFoundException:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Product not found"
         )
-
-    return ProductResponse.model_validate(product)
 
 
 @router.post("", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 async def create_product(
     request: ProductCreateRequest,
     company_ctx: CompanyCtx,
-    product_repo: Annotated[ProductRepository, Depends(get_product_repository)],
+    product_service: Annotated[ProductService, Depends(get_product_service)],
     _: Annotated[None, Depends(require_permission(Permission.CREATE_PRODUCTS))]
 ):
     """
@@ -144,45 +144,38 @@ async def create_product(
         - 400: Invalid input or system admin didn't specify company_id
         - 409: SKU already exists in the company
     """
-    # Determine company_id
-    if company_ctx.is_system_admin:
-        # System admin must explicitly specify company
-        if not request.company_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="System admin must specify company_id when creating products"
-            )
-        company_id = request.company_id
-        logger.info(f"System admin creating product for company {company_id}")
-    else:
-        # Regular user - use their company
-        company_id = company_ctx.company_id
-        logger.info(f"User {company_ctx.user.id} creating product for their company")
+    try:
+        # Log action
+        if company_ctx.is_system_admin:
+            logger.info(f"System admin creating product for company {request.company_id}")
+        else:
+            logger.info(f"User {company_ctx.user.id} creating product for their company")
 
-    # Check for duplicate SKU within the company
-    existing = await product_repo.get_by_sku(request.sku, company_ctx)
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Product with SKU '{request.sku}' already exists"
+        product = await product_service.create_product(
+            company_ctx=company_ctx,
+            name=request.name,
+            sku=request.sku,
+            selling_price=request.selling_price,
+            description=request.description,
+            cost_price=request.cost_price,
+            stock_quantity=request.stock_quantity,
+            reorder_level=request.reorder_level,
+            company_id=request.company_id,
         )
 
-    # Create product
-    product = Product(
-        company_id=company_id,
-        name=request.name,
-        sku=request.sku,
-        description=request.description,
-        cost_price=request.cost_price,
-        selling_price=request.selling_price,
-        stock_quantity=request.stock_quantity,
-        reorder_level=request.reorder_level,
-    )
+        logger.info(f"Created product {product.id} for company {product.company_id}")
+        return ProductResponse.model_validate(product)
 
-    product = await product_repo.create(product)
-
-    logger.info(f"Created product {product.id} for company {company_id}")
-    return ProductResponse.model_validate(product)
+    except ProductAlreadyExistsException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=exc.message
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc)
+        )
 
 
 @router.put("/{product_id}", response_model=ProductResponse)
@@ -190,7 +183,7 @@ async def update_product(
     product_id: UUID,
     request: ProductUpdateRequest,
     company_ctx: CompanyCtx,
-    product_repo: Annotated[ProductRepository, Depends(get_product_repository)],
+    product_service: Annotated[ProductService, Depends(get_product_service)],
     _: Annotated[None, Depends(require_permission(Permission.EDIT_PRODUCTS))]
 ):
     """
@@ -203,53 +196,40 @@ async def update_product(
         - 404: Product not found OR belongs to different company
         - 409: Updated SKU conflicts with another product
     """
-    # Get product with company access check
-    product = await product_repo.get_by_id_for_company(product_id, company_ctx)
+    try:
+        product = await product_service.update_product(
+            product_id=product_id,
+            company_ctx=company_ctx,
+            name=request.name,
+            sku=request.sku,
+            description=request.description,
+            cost_price=request.cost_price,
+            selling_price=request.selling_price,
+            stock_quantity=request.stock_quantity,
+            reorder_level=request.reorder_level,
+            is_active=request.is_active,
+        )
 
-    if not product:
+        logger.info(f"Updated product {product.id}")
+        return ProductResponse.model_validate(product)
+
+    except ProductNotFoundException:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Product not found"
         )
-
-    # Check SKU uniqueness if changing
-    if request.sku and request.sku != product.sku:
-        existing = await product_repo.get_by_sku(request.sku, company_ctx)
-        if existing:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Product with SKU '{request.sku}' already exists"
-            )
-
-    # Update fields (only if provided)
-    if request.name is not None:
-        product.name = request.name
-    if request.sku is not None:
-        product.sku = request.sku
-    if request.description is not None:
-        product.description = request.description
-    if request.cost_price is not None:
-        product.cost_price = request.cost_price
-    if request.selling_price is not None:
-        product.selling_price = request.selling_price
-    if request.stock_quantity is not None:
-        product.stock_quantity = request.stock_quantity
-    if request.reorder_level is not None:
-        product.reorder_level = request.reorder_level
-    if request.is_active is not None:
-        product.is_active = request.is_active
-
-    product = await product_repo.update(product)
-
-    logger.info(f"Updated product {product.id}")
-    return ProductResponse.model_validate(product)
+    except ProductAlreadyExistsException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=exc.message
+        )
 
 
 @router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_product(
     product_id: UUID,
     company_ctx: CompanyCtx,
-    product_repo: Annotated[ProductRepository, Depends(get_product_repository)],
+    product_service: Annotated[ProductService, Depends(get_product_service)],
     _: Annotated[None, Depends(require_permission(Permission.DELETE_PRODUCTS))]
 ):
     """
@@ -261,16 +241,13 @@ async def delete_product(
         - 204: Product deleted successfully
         - 404: Product not found OR belongs to different company
     """
-    # Get product with company access check
-    product = await product_repo.get_by_id_for_company(product_id, company_ctx)
+    try:
+        await product_service.delete_product(product_id, company_ctx)
+        logger.info(f"Deleted product {product_id}")
+        return None
 
-    if not product:
+    except ProductNotFoundException:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Product not found"
         )
-
-    await product_repo.delete(product)
-
-    logger.info(f"Deleted product {product_id}")
-    return None
