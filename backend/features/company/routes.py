@@ -3,7 +3,6 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.dependencies import get_db
-from features.auth.dependencies import CurrentUser
 from features.authorization.dependencies import require_permission
 from features.authorization.permissions import Permission
 from features.company.schemas import (
@@ -11,17 +10,11 @@ from features.company.schemas import (
     CompanyUpdateRequest,
     CompanyResponse,
 )
-from features.company.repository import CompanyRepository
+from features.company.dependencies import get_company_service
 from features.company.service import CompanyService, CompanyAlreadyExistsException, CompanyNotFoundException
 from features.auth.schemas import MessageResponse
 
 router = APIRouter(prefix="/companies", tags=["Companies"])
-
-
-def get_company_service(db: Annotated[AsyncSession, Depends(get_db)]) -> CompanyService:
-    """Get company service."""
-    company_repo = CompanyRepository(db)
-    return CompanyService(company_repo)
 
 
 @router.post("", response_model=CompanyResponse, status_code=status.HTTP_201_CREATED)

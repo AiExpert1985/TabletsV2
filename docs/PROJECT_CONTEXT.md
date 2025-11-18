@@ -246,25 +246,49 @@ enum AuthStatus { loading, authenticated }
 - Repository interfaces must be complete (declare ALL methods services use)
 - Services = business logic only (no state management, no direct DB access)
 
-### 2. Multi-Tenancy Isolation
+### 2. Dependencies Organization (CRITICAL)
+- **Every feature MUST have a `dependencies.py` file** for FastAPI dependencies
+- **NEVER define dependencies in route files** - always move them to `dependencies.py`
+- **Pattern:** Routes import from `dependencies.py`, never define `get_*_service()` locally
+- **Example structure:**
+  ```
+  features/auth/
+    ├── dependencies.py    # ✅ get_auth_service, get_user_service, build_user_response, etc.
+    ├── auth_routes.py     # ✅ Imports from dependencies.py
+    └── user_routes.py     # ✅ Imports from dependencies.py
+  features/company/
+    ├── dependencies.py    # ✅ get_company_service
+    └── routes.py          # ✅ Imports from dependencies.py
+  features/product/
+    ├── dependencies.py    # ✅ get_product_service
+    └── routes.py          # ✅ Imports from dependencies.py
+  ```
+- **What goes in `dependencies.py`:**
+  - Service factory functions (`get_*_service`)
+  - Authorization/permission checks (`require_system_admin`, etc.)
+  - Response builders (`build_user_response`, etc.)
+  - Error handlers (`handle_*_exception`)
+  - Any reusable dependency used across multiple routes
+
+### 3. Multi-Tenancy Isolation
 - Never bypass `CompanyContext` filtering
 - System admin: `company_id = NULL` (must handle explicitly)
 - Always use `BaseRepository` for company-scoped entities
 - **CompanyContext pattern:** `CompanyContext(user=user)` - `should_filter` is auto-calculated
 
-### 3. Security
+### 4. Security
 - No public signup - admin creation CLI-only (`scripts/db/create_admin.py`)
 - Single refresh token per user (logout other devices on new login)
 - Phone numbers are unique identifiers (not usernames)
 - Bcrypt rounds = 12 (never lower for "performance")
 
-### 4. Type Safety
+### 5. Type Safety
 - Backend: Always use type hints (Python 3.11+ syntax)
 - Client: Always use sealed classes for state (not enums)
 - Never use `dynamic` or `Any` unless absolutely necessary
 - Use `TYPE_CHECKING` for circular import prevention
 
-### 5. Testing
+### 6. Testing
 - 70% effective coverage, not 100% actual coverage
 - Focus: Service layer > Repositories > Security > Endpoints
 - Skip framework internals and UI widgets (use integration tests)
@@ -392,6 +416,21 @@ When starting a new feature or fixing a bug:
 - **Cleanup:** Removed unused `change_password()` method from UserService and `update_password()` from UserRepository
 - **Pattern:** Consistent with service layer (no abstractions) - services and repositories are concrete classes only
 - **Documentation:** Updated PROJECT_CONTEXT.md and AI_GUIDELINES.md to reflect no-abstraction policy
+
+### Session: Dependencies Organization (2025-11-18)
+- **Problem:** Dependencies scattered across route files instead of centralized `dependencies.py` files
+- **Found scattered dependencies:**
+  - auth_routes.py: `build_user_response()`, `handle_auth_exception()` (helper functions)
+  - user_routes.py: `get_user_service()`, `require_system_admin()` (FastAPI dependencies)
+  - company/routes.py: `get_company_service()` (FastAPI dependency)
+  - product/routes.py: `get_product_service()` (FastAPI dependency)
+- **Solution:**
+  - Moved all auth dependencies to `features/auth/dependencies.py`
+  - Created `features/company/dependencies.py` with `get_company_service()`
+  - Created `features/product/dependencies.py` with `get_product_service()`
+  - Updated all route files to import from `dependencies.py` instead of defining locally
+- **Pattern:** Every feature MUST have a `dependencies.py` file - routes only import, never define
+- **Documentation:** Added "Dependencies Organization" to PROJECT_CONTEXT.md "What to Preserve" section
 
 ---
 

@@ -7,26 +7,16 @@ automatic company filtering.
 from typing import Annotated
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.ext.asyncio import AsyncSession
-from core.database import get_db
 from core.company_context import CompanyCtx
 from features.authorization.permissions import Permission
 from features.authorization.dependencies import require_permission
-from features.product.repository import ProductRepository
+from features.product.dependencies import get_product_service
 from features.product.service import ProductService, ProductAlreadyExistsException, ProductNotFoundException
 from features.product.schemas import ProductCreateRequest, ProductUpdateRequest, ProductResponse
 from features.logging.logger import get_logger
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/products", tags=["products"])
-
-
-def get_product_service(
-    db: Annotated[AsyncSession, Depends(get_db)]
-) -> ProductService:
-    """Get product service dependency."""
-    product_repo = ProductRepository(db)
-    return ProductService(product_repo)
 
 
 @router.get("", response_model=list[ProductResponse])

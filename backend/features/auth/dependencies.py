@@ -105,3 +105,121 @@ async def get_current_user(
 
 # Type alias for convenience
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+async def get_user_service(
+    db: Annotated[AsyncSession, Depends(get_db)]
+) -> "UserService":
+    """Get user service."""
+    from features.auth.user_service import UserService
+    user_repo = UserRepository(db)
+    return UserService(user_repo)
+
+
+# ============================================================================
+# Authorization Dependencies
+# ============================================================================
+
+async def require_system_admin(current_user: CurrentUser) -> None:
+    """Require system admin role."""
+    from features.auth.models import UserRole
+    if current_user.role != UserRole.SYSTEM_ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only system admin can access user management"
+        )
+
+
+# ============================================================================
+# Response Helpers
+# ============================================================================
+
+def build_user_response(user: User) -> "UserResponse":
+    """
+    Build UserResponse with calculated permissions.
+
+    Args:
+        user: User model
+
+    Returns:
+        UserResponse with permissions populated
+    """
+    from features.auth.schemas import UserResponse
+    from features.authorization.service import create_authorization_service
+
+    # Calculate permissions for the user
+    auth_service = create_authorization_service(user)
+    permissions = auth_service.get_permission_list()
+
+    return UserResponse(
+        id=str(user.id),
+        phone_number=user.phone_number,
+        email=user.email,
+        company_id=str(user.company_id) if user.company_id else None,
+        role=user.role.value,
+        company_roles=user.company_roles,
+        permissions=permissions,
+        is_active=user.is_active,
+        is_phone_verified=user.is_phone_verified,
+        created_at=user.created_at,
+        last_login_at=user.last_login_at,
+    )
+
+
+# ============================================================================
+# Error Handler Helper
+# ============================================================================
+
+def handle_auth_exception(exc: Exception) -> HTTPException:
+    """Convert app exceptions to HTTP exceptions."""
+    from core.exceptions import (
+        AppException,
+        PhoneAlreadyExistsException,
+        InvalidCredentialsException,
+        AccountDeactivatedException,
+        PasswordTooWeakException,
+        RateLimitExceededException,
+    )
+
+    if isinstance(exc, PhoneAlreadyExistsException):
+        return HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": exc.code, "message": exc.message},
+        )
+    elif isinstance(exc, InvalidCredentialsException):
+        return HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": exc.code, "message": exc.message},
+        )
+    elif isinstance(exc, AccountDeactivatedException):
+        return HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": exc.code, "message": exc.message},
+        )
+    elif isinstance(exc, PasswordTooWeakException):
+        return HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": exc.code, "message": exc.message},
+        )
+    elif isinstance(exc, RateLimitExceededException):
+        return HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={"code": exc.code, "message": exc.message},
+            headers={"Retry-After": str(exc.retry_after)},
+        )
+    elif isinstance(exc, AppException):
+        return HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": exc.code, "message": exc.message},
+        )
+    elif isinstance(exc, ValueError):
+        return HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "VALIDATION_ERROR", "message": str(exc)},
+        )
+    else:
+        # Unknown error
+        return HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": "INTERNAL_ERROR", "message": "An unexpected error occurred"},
+        )
