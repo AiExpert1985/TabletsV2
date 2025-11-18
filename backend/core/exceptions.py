@@ -28,9 +28,9 @@ class InvalidCredentialsException(AppException):
 
 
 class AccountDeactivatedException(AppException):
-    def __init__(self):
+    def __init__(self, message: str = "Account has been deactivated"):
         super().__init__(
-            message="Account has been deactivated",
+            message=message,
             code="ACCOUNT_DEACTIVATED"
         )
 

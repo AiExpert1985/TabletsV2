@@ -84,16 +84,21 @@ class AuthService:
         if not user.is_active:
             raise AccountDeactivatedException()
 
-        # 6. Reset rate limiter on successful login
+        # 6. Check if company is active (for non-system-admin users)
+        if user.company_id and user.company:
+            if not user.company.is_active:
+                raise AccountDeactivatedException("Company account is deactivated")
+
+        # 7. Reset rate limiter on successful login
         rate_limiter.reset(normalized_phone)
 
-        # 7. Revoke all existing refresh tokens (single device policy)
+        # 8. Revoke all existing refresh tokens (single device policy)
         await self.refresh_token_repo.revoke_all_for_user(str(user.id))
 
-        # 8. Generate tokens
+        # 9. Generate tokens
         tokens = await self._generate_token_pair(user)
 
-        # 9. Update last login timestamp
+        # 10. Update last login timestamp
         await self.user_repo.update_last_login(str(user.id))
 
         return user, tokens

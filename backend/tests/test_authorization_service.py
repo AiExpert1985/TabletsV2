@@ -126,6 +126,34 @@ class TestAuthorizationService:
         assert not auth_service.has_permission(Permission.VIEW_PRODUCTS)
         assert not auth_service.is_system_admin()
 
+    def test_user_from_inactive_company_has_no_permissions(self):
+        """Users from inactive companies should have zero permissions."""
+        # Arrange - Create user with inactive company
+        from features.company.models import Company
+        company_id = uuid4()
+
+        # Mock inactive company
+        inactive_company = Mock(spec=Company)
+        inactive_company.id = company_id
+        inactive_company.is_active = False
+
+        user = Mock(spec=User)
+        user.id = str(uuid4())
+        user.phone_number = "+9647700000010"
+        user.role = UserRole.COMPANY_ADMIN  # Even admin role gets no permissions
+        user.company_id = company_id
+        user.company = inactive_company
+        user.is_active = True  # User is active, but company is not
+
+        auth_service = AuthorizationService(user)
+
+        # Act & Assert
+        assert len(auth_service.permissions) == 0
+        assert not auth_service.has_permission(Permission.VIEW_USERS)
+        assert not auth_service.has_permission(Permission.CREATE_USERS)
+        assert not auth_service.has_permission(Permission.VIEW_PRODUCTS)
+        assert not auth_service.is_system_admin()
+
     def test_company_admin_permissions(self, mock_company_admin):
         """Company admin should have admin permissions within company."""
         # Arrange

@@ -55,6 +55,7 @@ class AuthorizationService:
         Security rules:
         - Null user = no permissions
         - Inactive user = no permissions
+        - User from inactive company = no permissions
         - Each role has a defined permission set
 
         Returns:
@@ -71,6 +72,15 @@ class AuthorizationService:
                 f"Authorization: User {self.user.id} is inactive, denying all permissions"
             )
             return set()
+
+        # Company status check: users from inactive companies get zero permissions
+        if self.user.company_id and self.user.company:
+            if not self.user.company.is_active:
+                logger.warning(
+                    f"Authorization: User {self.user.id} belongs to inactive company "
+                    f"{self.user.company_id}, denying all permissions"
+                )
+                return set()
 
         # Get permissions for the user's single role
         permissions = get_permissions_for_role(self.user.role)

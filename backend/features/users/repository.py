@@ -43,15 +43,21 @@ class UserRepository:
 
     async def get_by_phone(self, phone_number: str) -> User | None:
         """Get user by phone number."""
+        from sqlalchemy.orm import selectinload
         result = await self.db.execute(
-            select(User).where(User.phone_number == phone_number)
+            select(User)
+            .where(User.phone_number == phone_number)
+            .options(selectinload(User.company))  # Eagerly load company for status check
         )
         return result.scalar_one_or_none()
 
     async def get_by_id(self, user_id: str) -> User | None:
         """Get user by ID."""
+        from sqlalchemy.orm import selectinload
         result = await self.db.execute(
-            select(User).where(User.id == user_id)
+            select(User)
+            .where(User.id == user_id)
+            .options(selectinload(User.company))  # Eagerly load company for status check
         )
         return result.scalar_one_or_none()
 

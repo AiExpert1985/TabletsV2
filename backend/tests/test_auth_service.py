@@ -6,6 +6,7 @@ from features.auth.auth_services import AuthService, TokenPair
 from features.auth.models import User
 from features.users.repository import UserRepository
 from features.auth.repository import RefreshTokenRepository
+from features.company.models import Company
 from core.exceptions import (
     PhoneAlreadyExistsException,
     InvalidCredentialsException,
@@ -94,6 +95,37 @@ class TestAuthServiceLogin:
                 phone_number=valid_phone,
                 password=valid_password,
             )
+
+    @pytest.mark.asyncio
+    async def test_login_inactive_company(
+        self,
+        auth_service: AuthService,
+        test_user: User,
+        test_company: Company,
+        valid_phone: str,
+        valid_password: str,
+        db_session: AsyncSession,
+    ):
+        """Login with user from inactive company fails."""
+        # Arrange - deactivate company
+        from features.company.repository import CompanyRepository
+
+        company_repo = CompanyRepository(db_session)
+        await company_repo.update(
+            company_id=str(test_company.id),
+            is_active=False
+        )
+        await db_session.commit()  # Ensure change is persisted
+        db_session.expire_all()  # Force reload of all cached objects
+
+        # Act & Assert
+        with pytest.raises(AccountDeactivatedException) as exc_info:
+            await auth_service.login(
+                phone_number=valid_phone,
+                password=valid_password,
+            )
+
+        assert "Company account is deactivated" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_login_normalizes_phone(
