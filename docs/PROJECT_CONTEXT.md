@@ -234,33 +234,36 @@ enum AuthStatus { loading, authenticated }
 
 ## What to Preserve (Critical!)
 
-### 1. Multi-Tenancy Isolation
+### 1. Service Layer Architecture (MOST CRITICAL)
+- **3-layer separation:** `routes/scripts → services → repositories → database`
+- **NEVER bypass services:** ALL business operations MUST go through service layer
+- **Pattern:** `await user_service.create_user(...)` ✅ NOT `User(...); repo.db.add()` ❌
+- Routes and scripts are thin controllers - delegate to services
+- Repository interfaces must be complete (declare ALL methods services use)
+- Services = business logic only (no state management, no direct DB access)
+
+### 2. Multi-Tenancy Isolation
 - Never bypass `CompanyContext` filtering
-- System admin queries must explicitly handle `company_id = NULL`
+- System admin: `company_id = NULL` (must handle explicitly)
 - Always use `BaseRepository` for company-scoped entities
+- **CompanyContext pattern:** `CompanyContext(user=user)` - `should_filter` is auto-calculated
 
-### 2. Security
-- No public signup - admin creation CLI-only
-- Single refresh token per user (logout other devices)
+### 3. Security
+- No public signup - admin creation CLI-only (`scripts/db/create_admin.py`)
+- Single refresh token per user (logout other devices on new login)
 - Phone numbers are unique identifiers (not usernames)
-- Bcrypt rounds = 12 (don't lower for "performance")
+- Bcrypt rounds = 12 (never lower for "performance")
 
-### 3. Type Safety
-- Backend: Always use type hints
+### 4. Type Safety
+- Backend: Always use type hints (Python 3.11+ syntax)
 - Client: Always use sealed classes for state (not enums)
 - Never use `dynamic` or `Any` unless absolutely necessary
+- Use `TYPE_CHECKING` for circular import prevention
 
-### 4. Testing
-- Don't chase 100% coverage
-- Focus on service layer and critical business logic
+### 5. Testing
+- 70% effective coverage, not 100% actual coverage
+- Focus: Service layer > Repositories > Security > Endpoints
 - Skip framework internals and UI widgets (use integration tests)
-
-### 5. Architecture
-- **CRITICAL:** Maintain 3-layer separation - routes/scripts → services → repositories → database
-- **Service Layer is Mandatory:** ALL business operations MUST go through services (never bypass to repositories)
-- Keep feature-based structure (user, product, company)
-- Service layer = business logic only (no state management)
-- Repository interfaces must be complete (all methods used by services must be declared in ABC)
 
 ---
 
@@ -287,137 +290,31 @@ When starting a new feature or fixing a bug:
 ## Recent Changes & Sessions
 
 ### Session: Initial Setup
-- Created 3-layer clean architecture
-- Implemented multi-tenancy with company isolation
-- Set up phone-first authentication
-- Created 95+ client tests + 86+ backend tests
+- Created 3-layer clean architecture (routes → services → repositories)
+- Implemented multi-tenancy with company isolation via CompanyContext
+- Set up phone-first authentication (+964 Iraqi numbers, bcrypt cost 12)
+- Established testing strategy: 95+ client tests, 86+ backend tests
 
 ### Session: Project Reorganization
-- Moved documentation to `docs/` folder
-- Consolidated scripts into `backend/scripts/db/`
-- Removed redundant `CODING_GUIDELINES.md` (replaced by AI_GUIDELINES.md + PROJECT_CONTEXT.md)
-- Migrated dependencies to `pyproject.toml`
-- Created this PROJECT_CONTEXT.md file for AI assistant handoffs
+- Moved docs to `docs/` folder, consolidated scripts to `scripts/db/`
+- Migrated dependencies to `pyproject.toml` (removed requirements.txt)
+- Created PROJECT_CONTEXT.md and AI_GUIDELINES.md as single source of truth
 
-### Session: Scripts Consolidation & Type Safety (2025-11-17)
-**Decision:** Consolidated all database scripts into single `scripts/db/` folder
-- **Rationale:** Eliminated confusion from having separate `admin/` and `db/` folders
-- **Implementation:**
-  - All scripts now in `scripts/db/`: `setup_all.py`, `reset_db.py`, `create_admin.py`, `seed_data.py`
-  - Removed redundant files: old `reset_database.py`, `operations.py`, `reset.py`
-  - Admin creation separated from seed data (no redundant admin in seed_data.json)
+### Session: Scripts & Type Safety (2025-11-17)
+- **Scripts:** Consolidated all database scripts into `scripts/db/` folder (setup_all, reset_db, create_admin, seed_data)
+- **Seed data:** Committed directly to git (no template pattern) - contains only sample data
+- **Type safety:** Fixed Python 3.11+ compatibility (`TYPE_CHECKING`, `from __future__ import annotations`, TypeVar string literals)
+- **Python version:** Minimum 3.11 (asyncpg 0.29.0 doesn't support 3.13 yet)
 
-**Decision:** Seed data committed directly to git (no template pattern)
-- **Rationale:** Contains only sample data (no sensitive credentials), simplicity over abstraction
-- **Implementation:**
-  - `seed_data.json` - Committed to git, users edit directly as needed
-  - Removed from `.gitignore` (both root and backend)
-  - System admin removed from seed data (created separately by `create_admin.py`)
-- **Trade-off:** Users with custom phone numbers will see them in git, but acceptable for sample data
-
-**Decision:** Fixed type safety issues for Python 3.11+ compatibility
-- **Pattern:** Use `TYPE_CHECKING` for circular import prevention
-- **Implementation:**
-  - Added `from __future__ import annotations` for PEP 563 compatibility
-  - Used string literals for TypeVar bounds: `ModelType = TypeVar("ModelType", bound="Base")`
-  - Fixed AsyncGenerator return types in database.py
-  - All forward references use TYPE_CHECKING imports
-
-**Decision:** Python 3.11 as minimum version (not 3.13)
-- **Rationale:** asyncpg 0.29.0 doesn't support Python 3.13 (C extension build fails)
-- **Trade-off:** Wait for dependency ecosystem to catch up before supporting 3.13
-- **Current:** All code compatible with both 3.11 and 3.13, but use 3.11 for development
-
-### Session: Service Layer Pattern Enforcement (2025-11-18)
-**Problem:** Routes and scripts were bypassing service layer and accessing repositories directly
-- User routes created User models and called `user_repo.db.add()` directly
-- Product routes used `product_repo` directly instead of ProductService
-- Company routes used `company_repo` directly instead of CompanyService
-- Scripts (create_admin.py, seed_data.py) accessed repositories directly
-- Violated documented 3-layer architecture pattern
-
-**Decision:** Enforced service layer pattern across ALL features
-- **Rationale:** Single source of truth for business logic, easier maintenance, proper abstraction
-- **Implementation:**
-  - Created `UserService` for user management operations (features/auth/user_service.py)
-  - Created `ProductService` for product operations (features/product/service.py)
-  - Created `CompanyService` for company management (features/company/service.py)
-  - Refactored all routes to use services instead of repositories
-  - Updated all scripts to use services instead of repositories
-  - Added 42 new service layer tests (test_user_service.py, test_product_service.py, test_company_service.py)
-
-**Pattern Established:**
-```python
-# Routes/Scripts
-user = await user_service.create_user(...)  # ✅ CORRECT
-await db.commit()
-
-# NOT this
-user = User(...)                            # ❌ WRONG - bypasses service
-user_repo.db.add(user)
-```
-
-**Decision:** Remove unused signup functionality
-- **Rationale:** Public signup is completely disabled (admin creation only), signup code was dead code
-- **Removed:**
-  - AuthService.signup() method
-  - POST /auth/signup route
-  - SignupRequest/SignupResponse schemas
-  - test_public_signup_is_disabled test
-- **Trade-off:** Cleaner codebase, no confusion about signup availability
-
-**Decision:** Rename auth files for consistency
-- **Rationale:** Match naming pattern used by other features (product/routes.py is specific, not generic)
-- **Renamed:**
-  - `features/auth/routes.py` → `features/auth/auth_routes.py`
-  - `features/auth/services.py` → `features/auth/auth_services.py`
-- **Updated:** All imports across 6 files (main.py, dependencies.py, user_routes.py, conftest.py, tests)
-
-**Decision:** Complete repository interfaces
-- **Problem:** UserService called methods not declared in IUserRepository interface (Pylance errors)
-- **Solution:** Added missing abstract methods to IUserRepository:
-  - `save(user: User) -> User` - saves user model to database
-  - `get_all(skip, limit) -> list[User]` - pagination support
-  - `update(user: User) -> User` - updates existing user
-  - `delete(user: User) -> None` - deletes user
-- **Rationale:** Services must only use interface methods, not implementation details
-- **Pattern:** If service needs a repository method, it MUST be in the interface
-
-**Pattern Established: CompanyContext Usage**
-```python
-# ✅ CORRECT - CompanyContext calculates should_filter automatically
-company_ctx = CompanyContext(user=user)
-
-# ❌ WRONG - should_filter is a calculated property, not a parameter
-company_ctx = CompanyContext(user=user, should_filter=False)
-```
-
-**Critical Rules for Future:**
-1. **NEVER bypass service layer** - All business operations go through services
-2. **Services are the only entry point** - Routes and scripts use services, not repositories
-3. **Repository interfaces must be complete** - Declare all methods services will use
-4. **CompanyContext takes only user** - should_filter is auto-calculated from user.role
-5. **No direct DB access in services** - Use repository methods, not `repo.db.add()`
-
-**Test Coverage Added:**
-- 13 UserService tests (phone validation, role rules, password hashing, etc.)
-- 15 ProductService tests (SKU uniqueness, company filtering, etc.)
-- 14 CompanyService tests (name uniqueness, cascade deletion, etc.)
-- Total: 42 new service layer tests ensuring business logic correctness
-
-**Files Changed:**
-- Created: 3 service files (user_service.py, product/service.py, company/service.py)
-- Refactored: 3 route files (user_routes.py, product/routes.py, company/routes.py)
-- Updated: 2 scripts (create_admin.py, seed_data.py)
-- Added: 3 test files (test_user_service.py, test_product_service.py, test_company_service.py)
-- Renamed: 2 auth files (routes.py → auth_routes.py, services.py → auth_services.py)
-
-**Commits:**
-- `d1907c8` - Implement service layer pattern across all features
-- `99d72ab` - Remove signup functionality and fix service layer issues
-- `09f8ae2` - Fix IUserRepository interface and test mocks
+### Session: Service Layer Enforcement (2025-11-18)
+- **Problem:** Routes/scripts bypassed services, accessed repositories directly (violated 3-layer architecture)
+- **Solution:** Created UserService, ProductService, CompanyService; refactored ALL routes/scripts to use services
+- **Pattern:** `await service.create_user(...)` ✅ NOT `User(...); repo.db.add()` ❌
+- **Cleanup:** Removed unused signup code (auth/services.py → auth_services.py, routes.py → auth_routes.py for consistency)
+- **Interface completeness:** Added missing methods to IUserRepository (save, get_all, update, delete)
+- **Tests:** Added 42 service layer tests (13 user, 15 product, 14 company)
+- **Commits:** d1907c8, 99d72ab, 09f8ae2
 
 ---
 
 **Last Updated:** 2025-11-18
-**Active Branch:** `claude/review-project-docs-01LMx8ZnJWe81oGffiAtSgKb`
