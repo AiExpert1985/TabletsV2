@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:client/core/network/http_exception.dart';
 import 'package:client/features/auth/domain/entities/user.dart';
@@ -9,7 +8,6 @@ import 'package:client/features/user_management/presentation/providers/user_stat
 
 import 'user_provider_test.mocks.dart';
 
-@GenerateMocks([UserRepository])
 void main() {
   group('UserNotifier', () {
     late UserNotifier notifier;
