@@ -5,7 +5,8 @@ import 'package:client/features/auth/presentation/providers/auth_provider.dart';
 import 'package:client/features/auth/presentation/providers/auth_state.dart';
 import 'package:client/features/home/presentation/screens/home_screen.dart';
 import 'package:client/features/product/presentation/screens/product_list_screen.dart';
-import 'package:client/features/user_management/presentation/screens/user_management_screen.dart';
+import 'package:client/features/user_management/presentation/screens/user_list_screen.dart';
+import 'package:client/features/user_management/presentation/screens/user_form_screen.dart';
 
 /// App router configuration using go_router
 final routerProvider = Provider<GoRouter>((ref) {
@@ -48,7 +49,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/user-management',
         name: 'user-management',
-        builder: (context, state) => const UserManagementScreen(),
+        builder: (context, state) => const UserListScreen(),
+      ),
+      GoRoute(
+        path: '/user-management/create',
+        name: 'user-create',
+        builder: (context, state) => const UserFormScreen(),
+      ),
+      GoRoute(
+        path: '/user-management/edit/:userId',
+        name: 'user-edit',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId']!;
+          return UserFormScreen(userId: userId);
+        },
       ),
     ],
   );

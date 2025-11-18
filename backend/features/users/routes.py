@@ -81,7 +81,6 @@ async def create_user(
             password=request.password,
             company_id=request.company_id,
             role=request.role,
-            company_roles=request.company_roles,
             email=request.email,
             is_active=request.is_active,
         )
@@ -121,7 +120,6 @@ async def update_user(
             email=update_data.get("email"),
             company_id=update_data.get("company_id"),
             role=update_data.get("role"),
-            company_roles=update_data.get("company_roles"),
             is_active=update_data.get("is_active"),
         )
 
