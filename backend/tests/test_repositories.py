@@ -37,7 +37,7 @@ class TestUserRepository:
         assert user.id is not None
         assert user.phone_number == "9647700000010"
         assert user.company_id == test_company.id
-        assert user.role == UserRole.USER
+        assert user.role == UserRole.VIEWER
         assert user.is_active is True
         assert user.created_at is not None
 
