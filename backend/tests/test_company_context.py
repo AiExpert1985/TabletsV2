@@ -27,9 +27,8 @@ def mock_company_user():
     user = Mock(spec=User)
     user.id = str(uuid4())
     user.phone_number = "+9647700000002"
-    user.role = UserRole.USER
+    user.role = UserRole.VIEWER
     user.company_id = company_id
-    user.company_roles = ["viewer"]
     user.is_active = True
     return user
 
@@ -43,7 +42,6 @@ def mock_company_admin():
     user.phone_number = "+9647700000003"
     user.role = UserRole.COMPANY_ADMIN
     user.company_id = company_id
-    user.company_roles = ["admin"]
     user.is_active = True
     return user
 
@@ -86,7 +84,7 @@ class TestCompanyContext:
         # Arrange - User without company_id (data corruption)
         user = Mock(spec=User)
         user.id = str(uuid4())
-        user.role = UserRole.USER
+        user.role = UserRole.VIEWER
         user.company_id = None  # Invalid for regular user
         user.is_active = True
 
@@ -266,13 +264,13 @@ class TestCompanyContext:
 
         user_a = Mock(spec=User)
         user_a.id = str(uuid4())
-        user_a.role = UserRole.USER
+        user_a.role = UserRole.VIEWER
         user_a.company_id = company_a_id
         user_a.is_active = True
 
         user_b = Mock(spec=User)
         user_b.id = str(uuid4())
-        user_b.role = UserRole.USER
+        user_b.role = UserRole.VIEWER
         user_b.company_id = company_b_id
         user_b.is_active = True
 

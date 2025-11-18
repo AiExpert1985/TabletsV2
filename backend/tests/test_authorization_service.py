@@ -3,7 +3,7 @@ import pytest
 from unittest.mock import Mock
 from uuid import uuid4
 from features.authorization.service import AuthorizationService, create_authorization_service
-from features.authorization.permissions import Permission, CompanyRole
+from features.authorization.permissions import Permission
 from features.auth.models import User, UserRole
 
 
@@ -143,9 +143,9 @@ class TestAuthorizationService:
         assert auth_service.has_permission(Permission.VIEW_WAREHOUSE)
         assert auth_service.has_permission(Permission.MANAGE_WAREHOUSE)
 
-        # Company admin CANNOT create/delete users (system admin only)
-        assert not auth_service.has_permission(Permission.CREATE_USERS)
-        assert not auth_service.has_permission(Permission.DELETE_USERS)
+        # Company admin CAN create/edit/delete users within their company
+        assert auth_service.has_permission(Permission.CREATE_USERS)
+        assert auth_service.has_permission(Permission.DELETE_USERS)
 
         # Company admin CANNOT manage companies (system admin only)
         assert not auth_service.has_permission(Permission.VIEW_COMPANIES)

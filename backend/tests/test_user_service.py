@@ -41,7 +41,7 @@ class TestUserService:
             phone_number="07700000001",
             password="TestPass123",
             company_id="123e4567-e89b-12d3-a456-426614174000",
-            role="user",
+            role="viewer",
         )
 
         # Assert
@@ -61,7 +61,7 @@ class TestUserService:
                 phone_number="07700000001",
                 password="TestPass123",
                 company_id="123e4567-e89b-12d3-a456-426614174000",
-                role="user",
+                role="viewer",
             )
 
     @pytest.mark.asyncio
@@ -85,7 +85,7 @@ class TestUserService:
                 phone_number="07700000001",
                 password="TestPass123",
                 company_id=None,
-                role="user",
+                role="viewer",
             )
 
     @pytest.mark.asyncio

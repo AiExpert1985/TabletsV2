@@ -3,7 +3,7 @@ import pytest
 from uuid import uuid4
 
 from features.auth.models import User, UserRole
-from features.authorization.permissions import Permission, CompanyRole
+from features.authorization.permissions import Permission
 from features.authorization.permission_checker import (
     get_user_permissions,
     has_permission,

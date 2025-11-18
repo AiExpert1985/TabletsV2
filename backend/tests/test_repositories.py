@@ -30,7 +30,7 @@ class TestUserRepository:
             phone_number="9647700000010",
             hashed_password=hash_password("TestPass123"),
             company_id=str(test_company.id),
-            role="user",
+            role="viewer",
         )
 
         # Assert
@@ -226,7 +226,7 @@ class TestUserRepository:
             phone_number="9647700000099",
             hashed_password=hash_password("Test123"),
             company_id=str(test_company.id),
-            role="user",
+            role="viewer",
         )
         user_id = str(user.id)
         await db_session.commit()
