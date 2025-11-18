@@ -157,12 +157,12 @@ async def test_company(company_repo: CompanyRepository) -> Company:
 
 @pytest.fixture
 async def test_user(user_repo: UserRepository, test_company: Company) -> User:
-    """Create regular test user."""
+    """Create regular test user with viewer role."""
     user = await user_repo.create(
         phone_number="9647700000001",
         hashed_password=hash_password("TestPassword123"),
         company_id=str(test_company.id),
-        role="user",
+        role="viewer",
     )
     return user
 
@@ -174,11 +174,8 @@ async def test_admin_user(user_repo: UserRepository, test_company: Company) -> U
         phone_number="9647700000002",
         hashed_password=hash_password("AdminPassword123"),
         company_id=str(test_company.id),
-        role="user",
+        role="company_admin",
     )
-    # Set company roles
-    user.company_roles = ["company_admin"]
-    await user_repo.update(user)
     return user
 
 

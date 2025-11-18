@@ -15,20 +15,19 @@ def mock_system_admin():
     user.phone_number = "+9647700000001"
     user.role = UserRole.SYSTEM_ADMIN
     user.company_id = None
-    user.company_roles = []
+    
     user.is_active = True
     return user
 
 
 @pytest.fixture
 def mock_company_admin():
-    """Create mock company admin user with admin role."""
+    """Create mock company admin user."""
     user = Mock(spec=User)
     user.id = str(uuid4())
     user.phone_number = "+9647700000002"
     user.role = UserRole.COMPANY_ADMIN
     user.company_id = uuid4()
-    user.company_roles = ["admin"]  # Company admin role
     user.is_active = True
     return user
 
@@ -39,9 +38,8 @@ def mock_accountant():
     user = Mock(spec=User)
     user.id = str(uuid4())
     user.phone_number = "+9647700000003"
-    user.role = UserRole.USER
+    user.role = UserRole.ACCOUNTANT
     user.company_id = uuid4()
-    user.company_roles = ["accountant"]
     user.is_active = True
     return user
 
@@ -52,9 +50,8 @@ def mock_salesperson():
     user = Mock(spec=User)
     user.id = str(uuid4())
     user.phone_number = "+9647700000004"
-    user.role = UserRole.USER
+    user.role = UserRole.SALESPERSON
     user.company_id = uuid4()
-    user.company_roles = ["salesperson"]
     user.is_active = True
     return user
 
@@ -65,9 +62,8 @@ def mock_viewer():
     user = Mock(spec=User)
     user.id = str(uuid4())
     user.phone_number = "+9647700000005"
-    user.role = UserRole.USER
+    user.role = UserRole.VIEWER
     user.company_id = uuid4()
-    user.company_roles = ["viewer"]
     user.is_active = True
     return user
 
@@ -78,9 +74,8 @@ def mock_inactive_user():
     user = Mock(spec=User)
     user.id = str(uuid4())
     user.phone_number = "+9647700000006"
-    user.role = UserRole.USER
+    user.role = UserRole.VIEWER
     user.company_id = uuid4()
-    user.company_roles = ["admin"]
     user.is_active = False  # Inactive
     return user
 
@@ -230,48 +225,6 @@ class TestAuthorizationService:
         assert not auth_service.has_permission(Permission.DELETE_PRODUCTS)
         assert not auth_service.has_permission(Permission.CREATE_INVOICES)
 
-    def test_multiple_company_roles_aggregate_permissions(self):
-        """User with multiple company roles should have union of all permissions."""
-        # Arrange - User with both salesperson and accountant roles
-        user = Mock(spec=User)
-        user.id = str(uuid4())
-        user.role = UserRole.USER
-        user.company_id = uuid4()
-        user.company_roles = ["salesperson", "accountant"]
-        user.is_active = True
-
-        auth_service = AuthorizationService(user)
-
-        # Act & Assert - Should have permissions from BOTH roles
-        # From salesperson
-        assert auth_service.has_permission(Permission.CREATE_INVOICES)
-
-        # From accountant
-        assert auth_service.has_permission(Permission.VIEW_FINANCIALS)
-        assert auth_service.has_permission(Permission.EXPORT_REPORTS)
-
-        # From both
-        assert auth_service.has_permission(Permission.VIEW_PRODUCTS)
-        assert auth_service.has_permission(Permission.VIEW_INVOICES)
-
-    def test_invalid_company_role_ignored(self):
-        """Invalid company role strings should be ignored gracefully."""
-        # Arrange - User with invalid role
-        user = Mock(spec=User)
-        user.id = str(uuid4())
-        user.role = UserRole.USER
-        user.company_id = uuid4()
-        user.company_roles = ["invalid_role", "viewer"]  # One invalid, one valid
-        user.is_active = True
-
-        auth_service = AuthorizationService(user)
-
-        # Act & Assert - Should have permissions from viewer only
-        assert auth_service.has_permission(Permission.VIEW_USERS)
-        assert auth_service.has_permission(Permission.VIEW_PRODUCTS)
-
-        # Should not crash, just ignore invalid role
-        assert len(auth_service.permissions) > 0
 
     def test_has_permission_with_string(self, mock_accountant):
         """has_permission should accept permission string."""

@@ -49,7 +49,6 @@ def test_company_admin_with_admin_role():
         hashed_password="hash",
         role=UserRole.COMPANY_ADMIN,
         company_id=company_id,
-        company_roles=["admin"],
         is_active=True,
     )
 
@@ -71,9 +70,8 @@ def test_user_with_viewer_role():
         id=uuid4(),
         phone_number="+9647700000003",
         hashed_password="hash",
-        role=UserRole.USER,
+        role=UserRole.VIEWER,
         company_id=company_id,
-        company_roles=["viewer"],
         is_active=True,
     )
 
@@ -88,16 +86,15 @@ def test_user_with_viewer_role():
     assert Permission.CREATE_PRODUCTS not in permissions
 
 
-def test_user_with_multiple_roles():
-    """User with multiple company roles gets combined permissions."""
+def test_user_with_salesperson_role():
+    """User with salesperson role gets appropriate permissions."""
     company_id = uuid4()
     user = User(
         id=uuid4(),
         phone_number="+9647700000004",
         hashed_password="hash",
-        role=UserRole.USER,
+        role=UserRole.SALESPERSON,
         company_id=company_id,
-        company_roles=["salesperson", "warehouse_keeper"],
         is_active=True,
     )
 
@@ -107,29 +104,36 @@ def test_user_with_multiple_roles():
     assert Permission.VIEW_PRODUCTS in permissions
     assert Permission.CREATE_INVOICES in permissions
 
-    # Should have warehouse keeper permissions
-    assert Permission.MANAGE_WAREHOUSE in permissions
-    assert Permission.EDIT_PRODUCTS in permissions
+    # Should NOT have product management permissions
+    assert Permission.CREATE_PRODUCTS not in permissions
+    assert Permission.DELETE_PRODUCTS not in permissions
 
 
-def test_user_with_invalid_role():
-    """User with invalid company role string ignores it."""
+def test_user_with_accountant_role():
+    """User with accountant role gets financial permissions."""
     company_id = uuid4()
     user = User(
         id=uuid4(),
         phone_number="+9647700000005",
         hashed_password="hash",
-        role=UserRole.USER,
+        role=UserRole.ACCOUNTANT,
         company_id=company_id,
-        company_roles=["invalid_role", "viewer"],
         is_active=True,
     )
 
     permissions = get_user_permissions(user)
 
-    # Should only have viewer permissions
+    # Should have view permissions
     assert Permission.VIEW_USERS in permissions
+    assert Permission.VIEW_PRODUCTS in permissions
+
+    # Should have financial permissions
+    assert Permission.VIEW_FINANCIALS in permissions
+    assert Permission.EXPORT_REPORTS in permissions
+
+    # Should NOT have create/edit permissions
     assert Permission.CREATE_USERS not in permissions
+    assert Permission.CREATE_PRODUCTS not in permissions
 
 
 # ============================================================================
@@ -158,9 +162,8 @@ def test_has_permission_false():
         id=uuid4(),
         phone_number="+9647700000007",
         hashed_password="hash",
-        role=UserRole.USER,
+        role=UserRole.VIEWER,
         company_id=company_id,
-        company_roles=["viewer"],
         is_active=True,
     )
 
@@ -196,9 +199,8 @@ def test_require_permission_denies_when_lacks_permission():
         id=uuid4(),
         phone_number="+9647700000009",
         hashed_password="hash",
-        role=UserRole.USER,
+        role=UserRole.VIEWER,
         company_id=company_id,
-        company_roles=["viewer"],
         is_active=True,
     )
 
@@ -218,9 +220,8 @@ def test_require_permission_checks_company_isolation():
         id=uuid4(),
         phone_number="+9647700000010",
         hashed_password="hash",
-        role=UserRole.USER,
+        role=UserRole.VIEWER,
         company_id=company_id,
-        company_roles=["admin"],
         is_active=True,
     )
 
@@ -262,9 +263,8 @@ def test_require_any_permission_allows_when_has_one():
         id=uuid4(),
         phone_number="+9647700000012",
         hashed_password="hash",
-        role=UserRole.USER,
+        role=UserRole.VIEWER,
         company_id=company_id,
-        company_roles=["salesperson"],
         is_active=True,
     )
 
@@ -282,9 +282,8 @@ def test_require_any_permission_denies_when_has_none():
         id=uuid4(),
         phone_number="+9647700000013",
         hashed_password="hash",
-        role=UserRole.USER,
+        role=UserRole.VIEWER,
         company_id=company_id,
-        company_roles=["viewer"],
         is_active=True,
     )
 
@@ -311,7 +310,6 @@ def test_require_all_permissions_allows_when_has_all():
         hashed_password="hash",
         role=UserRole.COMPANY_ADMIN,
         company_id=company_id,
-        company_roles=["admin"],
         is_active=True,
     )
 
@@ -329,9 +327,8 @@ def test_require_all_permissions_denies_when_missing_one():
         id=uuid4(),
         phone_number="+9647700000015",
         hashed_password="hash",
-        role=UserRole.USER,
+        role=UserRole.SALESPERSON,
         company_id=company_id,
-        company_roles=["salesperson"],
         is_active=True,
     )
 
@@ -421,7 +418,7 @@ def test_require_company_admin_denies_regular_user():
         id=uuid4(),
         phone_number="+9647700000020",
         hashed_password="hash",
-        role=UserRole.USER,
+        role=UserRole.VIEWER,
         company_id=company_id,
         is_active=True,
     )

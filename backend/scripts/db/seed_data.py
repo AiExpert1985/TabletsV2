@@ -85,8 +85,7 @@ async def seed_users(users_data: list[dict], companies: dict[str, Company]) -> l
                     phone_number=data["phone_number"],
                     password=data["password"],
                     company_id=str(company.id),
-                    role=data.get("role", "user"),
-                    company_roles=data.get("company_roles", []),
+                    role=data.get("role", "viewer"),
                     is_active=data.get("is_active", True),
                 )
                 users.append(user)
