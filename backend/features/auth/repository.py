@@ -26,6 +26,11 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
+    async def save(self, user: User) -> User:
+        """Save user model to database."""
+        pass
+
+    @abstractmethod
     async def get_by_phone(self, phone_number: str) -> User | None:
         """Get user by phone number."""
         pass
@@ -53,6 +58,21 @@ class IUserRepository(ABC):
     @abstractmethod
     async def update_password(self, user_id: str, hashed_password: str) -> None:
         """Update user's password."""
+        pass
+
+    @abstractmethod
+    async def get_all(self, skip: int = 0, limit: int = 100) -> list[User]:
+        """Get all users with pagination."""
+        pass
+
+    @abstractmethod
+    async def update(self, user: User) -> User:
+        """Update existing user."""
+        pass
+
+    @abstractmethod
+    async def delete(self, user: User) -> None:
+        """Delete a user."""
         pass
 
 
@@ -118,6 +138,13 @@ class UserRepository(IUserRepository):
             company_id=uuid.UUID(company_id) if company_id else None,
             role=UserRole(role),
         )
+        self.db.add(user)
+        await self.db.flush()
+        await self.db.refresh(user)
+        return user
+
+    async def save(self, user: User) -> User:
+        """Save user model to database."""
         self.db.add(user)
         await self.db.flush()
         await self.db.refresh(user)

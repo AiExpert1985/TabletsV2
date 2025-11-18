@@ -58,26 +58,6 @@ class AuthService:
         self.user_repo = user_repo
         self.refresh_token_repo = refresh_token_repo
 
-    async def signup(self, phone_number: str, password: str) -> tuple[User, TokenPair]:
-        """
-        Register new user (PUBLIC SIGNUP DISABLED).
-
-        Public signup is disabled for security. System admins create all users
-        via admin endpoints or CLI script (create_system_admin.py).
-
-        Returns:
-            (User, TokenPair)
-
-        Raises:
-            ValueError: Public signup is disabled
-        """
-        # Public signup is completely disabled
-        # Use create_system_admin.py CLI script to create system admin
-        # System admins create other users via admin endpoints
-        raise ValueError(
-            "Public signup is disabled. Please contact system administrator to create your account."
-        )
-
     async def login(self, phone_number: str, password: str) -> tuple[User, TokenPair]:
         """
         Login user.

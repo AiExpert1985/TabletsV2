@@ -12,7 +12,7 @@ from features.auth.repository import (
     UserRepository,
     RefreshTokenRepository,
 )
-from features.auth.services import AuthService
+from features.auth.auth_services import AuthService
 
 # HTTP Bearer token scheme
 bearer_scheme = HTTPBearer(auto_error=False)
