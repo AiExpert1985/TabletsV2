@@ -68,3 +68,9 @@ class RateLimitExceededException(AppException):
             message=f"Too many attempts. Try again in {retry_after} seconds",
             code="RATE_LIMIT_EXCEEDED"
         )
+
+
+# Authorization exceptions
+class PermissionDeniedException(AppException):
+    def __init__(self, message: str = "Insufficient permissions"):
+        super().__init__(message=message, code="PERMISSION_DENIED")

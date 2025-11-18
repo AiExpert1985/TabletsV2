@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from core.database import init_db
 from core.config import get_settings
-from core.exceptions import AppException
+from core.exceptions import AppException, PermissionDeniedException
 from features.auth.auth_routes import router as auth_router
 from features.users.routes import router as user_router
 from features.company.routes import router as company_router
@@ -57,7 +57,26 @@ app.add_middleware(
 )
 
 
-# Global exception handler for AppException
+# Global exception handler for PermissionDeniedException (403)
+@app.exception_handler(PermissionDeniedException)
+async def permission_denied_handler(request: Request, exc: PermissionDeniedException):
+    """Handle authorization/permission exceptions."""
+    logger.warning(
+        f"PermissionDenied: {exc.message} | "
+        f"Path: {request.url.path}"
+    )
+    return JSONResponse(
+        status_code=status.HTTP_403_FORBIDDEN,
+        content={
+            "error": {
+                "code": exc.code,
+                "message": exc.message,
+            }
+        },
+    )
+
+
+# Global exception handler for AppException (400)
 @app.exception_handler(AppException)
 async def app_exception_handler(request: Request, exc: AppException):
     """Handle application exceptions."""
