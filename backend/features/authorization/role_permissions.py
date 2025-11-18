@@ -3,20 +3,24 @@ Role-to-Permission mappings (Single Source of Truth).
 
 This file defines what permissions each role has.
 Uses PermissionGroups for type-safety and easier maintenance.
+
+Single role system - each user has ONE role that maps to a permission set.
 """
-from features.authorization.permissions import Permission, CompanyRole, PermissionGroups
+from features.authorization.permissions import Permission, PermissionGroups
 from features.auth.models import UserRole
 
 
 # ============================================================================
-# Company Role Permission Mappings
+# Role Permission Mappings (Single Source of Truth)
 # ============================================================================
 
-COMPANY_ROLE_PERMISSIONS: dict[CompanyRole, set[Permission]] = {
-    # Company Admin: Full access within company (but cannot create/delete users)
-    CompanyRole.ADMIN: (
-        PermissionGroups.USER_READ_ONLY  # View users only
-        | {Permission.EDIT_USERS}  # Can edit but not create/delete
+ROLE_PERMISSIONS: dict[UserRole, set[Permission]] = {
+    # System Admin: ALL permissions (including company management)
+    UserRole.SYSTEM_ADMIN: PermissionGroups.ALL_PERMISSIONS,
+
+    # Company Admin: Full access within company
+    UserRole.COMPANY_ADMIN: (
+        PermissionGroups.USER_MANAGEMENT  # Full user management
         | PermissionGroups.PRODUCT_MANAGEMENT
         | PermissionGroups.INVOICE_MANAGEMENT
         | PermissionGroups.PURCHASE_MANAGEMENT
@@ -26,32 +30,32 @@ COMPANY_ROLE_PERMISSIONS: dict[CompanyRole, set[Permission]] = {
     ),
 
     # Accountant: Financial operations and reports
-    CompanyRole.ACCOUNTANT: (
+    UserRole.ACCOUNTANT: (
         PermissionGroups.USER_READ_ONLY
         | PermissionGroups.PRODUCT_READ_ONLY
-        | PermissionGroups.ACCOUNTING_PERMISSIONS  # Pre-defined accounting set
+        | PermissionGroups.ACCOUNTING_PERMISSIONS
     ),
 
     # Sales Manager: Manage sales and invoices
-    CompanyRole.SALES_MANAGER: (
+    UserRole.SALES_MANAGER: (
         PermissionGroups.USER_READ_ONLY
-        | PermissionGroups.SALES_PERMISSIONS  # Pre-defined sales set
+        | PermissionGroups.SALES_PERMISSIONS
     ),
 
     # Warehouse Keeper: Manage inventory and warehouse
-    CompanyRole.WAREHOUSE_KEEPER: (
-        PermissionGroups.WAREHOUSE_KEEPER_PERMISSIONS  # Pre-defined warehouse set
+    UserRole.WAREHOUSE_KEEPER: (
+        PermissionGroups.WAREHOUSE_KEEPER_PERMISSIONS
     ),
 
     # Salesperson: Create/view invoices only
-    CompanyRole.SALESPERSON: (
+    UserRole.SALESPERSON: (
         PermissionGroups.PRODUCT_READ_ONLY
         | {Permission.VIEW_INVOICES, Permission.CREATE_INVOICES}
-        | PermissionGroups.WAREHOUSE_READ_ONLY  # Check stock
+        | PermissionGroups.WAREHOUSE_READ_ONLY
     ),
 
     # Viewer: Read-only access
-    CompanyRole.VIEWER: (
+    UserRole.VIEWER: (
         PermissionGroups.USER_READ_ONLY
         | PermissionGroups.PRODUCT_READ_ONLY
         | PermissionGroups.INVOICE_READ_ONLY
@@ -63,71 +67,17 @@ COMPANY_ROLE_PERMISSIONS: dict[CompanyRole, set[Permission]] = {
 
 
 # ============================================================================
-# System Role Permission Mappings
-# ============================================================================
-
-SYSTEM_ROLE_PERMISSIONS: dict[UserRole, set[Permission]] = {
-    # System Admin: ALL permissions (including company management)
-    UserRole.SYSTEM_ADMIN: PermissionGroups.ALL_PERMISSIONS,
-
-    # Company Admin and User have no system-level permissions by default
-    # They get permissions through their company roles
-    UserRole.COMPANY_ADMIN: set(),
-    UserRole.USER: set(),
-}
-
-
-# ============================================================================
 # Helper Functions
 # ============================================================================
 
-def get_permissions_for_company_role(role: CompanyRole) -> set[Permission]:
+def get_permissions_for_role(role: UserRole) -> set[Permission]:
     """
-    Get all permissions for a company role.
+    Get all permissions for a user role.
 
     Args:
-        role: Company role enum
+        role: User role enum
 
     Returns:
         Set of permissions for the role
     """
-    return COMPANY_ROLE_PERMISSIONS.get(role, set())
-
-
-def get_permissions_for_system_role(role: UserRole) -> set[Permission]:
-    """
-    Get all permissions for a system role.
-
-    Args:
-        role: System role enum (from UserRole)
-
-    Returns:
-        Set of permissions for the role
-    """
-    return SYSTEM_ROLE_PERMISSIONS.get(role, set())
-
-
-def get_all_permissions_for_user(
-    system_role: UserRole,
-    company_roles: list[CompanyRole]
-) -> set[Permission]:
-    """
-    Aggregate all permissions for a user based on their roles.
-
-    Combines system role permissions + all company role permissions.
-
-    Args:
-        system_role: User's system role
-        company_roles: List of user's company roles
-
-    Returns:
-        Set of all permissions (union of all roles)
-    """
-    # Start with system role permissions
-    permissions = get_permissions_for_system_role(system_role).copy()
-
-    # Add company role permissions
-    for company_role in company_roles:
-        permissions.update(get_permissions_for_company_role(company_role))
-
-    return permissions
+    return ROLE_PERMISSIONS.get(role, set())

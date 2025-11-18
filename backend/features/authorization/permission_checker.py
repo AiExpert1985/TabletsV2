@@ -1,8 +1,8 @@
 """
 Permission-based authorization checker.
 
-Centralized permission checking utility that works with the existing
-role-permission mappings. Supports company-aware authorization.
+Centralized permission checking utility with single-role system.
+Supports company-aware authorization.
 
 Usage:
     from features.authorization.permission_checker import require_permission
@@ -15,14 +15,14 @@ Usage:
 """
 from uuid import UUID
 from features.auth.models import User, UserRole
-from features.authorization.permissions import Permission, CompanyRole
-from features.authorization.role_permissions import get_all_permissions_for_user
+from features.authorization.permissions import Permission
+from features.authorization.role_permissions import get_permissions_for_role
 from core.exceptions import PermissionDeniedException
 
 
 def get_user_permissions(user: User) -> set[Permission]:
     """
-    Get all permissions for a user based on their roles.
+    Get all permissions for a user based on their role.
 
     Args:
         user: Current user
@@ -30,20 +30,8 @@ def get_user_permissions(user: User) -> set[Permission]:
     Returns:
         Set of all permissions the user has
     """
-    # Convert company_roles (list of strings) to CompanyRole enums
-    company_roles: list[CompanyRole] = []
-
-    # Handle None or empty company_roles
-    if user.company_roles:
-        for role_str in user.company_roles:
-            try:
-                company_roles.append(CompanyRole(role_str))
-            except ValueError:
-                # Skip invalid role strings
-                continue
-
-    # Get all permissions using existing role_permissions mapping
-    return get_all_permissions_for_user(user.role, company_roles)
+    # Simple: user has one role, role has permissions
+    return get_permissions_for_role(user.role)
 
 
 def has_permission(user: User, permission: Permission) -> bool:

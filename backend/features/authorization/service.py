@@ -1,11 +1,11 @@
 """
 Authorization Service - Core permission checking logic.
 
-Implements two-tier permission system with role aggregation.
+Implements single-role permission system.
 """
 from features.auth.models import User, UserRole
-from features.authorization.permissions import Permission, CompanyRole
-from features.authorization.role_permissions import get_all_permissions_for_user
+from features.authorization.permissions import Permission
+from features.authorization.role_permissions import get_permissions_for_role
 from features.logging.logger import get_logger
 
 logger = get_logger(__name__)
@@ -16,8 +16,7 @@ class AuthorizationService:
     Service for checking user permissions.
 
     Implements:
-    - Two-tier permission model (system + company roles)
-    - Permission aggregation (multiple roles combine)
+    - Single-role permission model (one role = one permission set)
     - Default deny security model
     - Status-based access control
     """
@@ -38,7 +37,7 @@ class AuthorizationService:
     @property
     def permissions(self) -> set[Permission]:
         """
-        Get aggregated permissions for the user.
+        Get permissions for the user.
 
         Lazily calculated and cached.
 
@@ -56,8 +55,7 @@ class AuthorizationService:
         Security rules:
         - Null user = no permissions
         - Inactive user = no permissions
-        - System admin = all permissions
-        - Company users = permissions from company roles
+        - Each role has a defined permission set
 
         Returns:
             Set of permissions
@@ -74,26 +72,12 @@ class AuthorizationService:
             )
             return set()
 
-        # Parse company roles from JSON list
-        company_roles: list[CompanyRole] = []
-        for role_str in self.user.company_roles:
-            try:
-                company_roles.append(CompanyRole(role_str))
-            except ValueError:
-                logger.warning(
-                    f"Authorization: Invalid company role '{role_str}' for user {self.user.id}"
-                )
-                continue
-
-        # Aggregate permissions from system role + company roles
-        permissions = get_all_permissions_for_user(
-            system_role=self.user.role,
-            company_roles=company_roles
-        )
+        # Get permissions for the user's single role
+        permissions = get_permissions_for_role(self.user.role)
 
         logger.debug(
             f"Authorization: User {self.user.id} has {len(permissions)} permissions "
-            f"(system_role={self.user.role.value}, company_roles={[r.value for r in company_roles]})"
+            f"(role={self.user.role.value})"
         )
 
         return permissions
