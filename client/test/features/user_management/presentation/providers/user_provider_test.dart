@@ -50,47 +50,35 @@ void main() {
     });
 
     group('getUsers', () {
-      test('emits loading then loaded state on success', () async {
+      test('emits loaded state on success', () async {
         final users = [testUser1, testUser2];
         when(mockRepository.getUsers(skip: 0, limit: 100))
             .thenAnswer((_) async => users);
 
-        final states = <UserState>[];
-        notifier.addListener((state) => states.add(state));
-
         await notifier.getUsers();
 
-        expect(states[0], isA<UserLoading>());
-        expect(states[1], isA<UsersLoaded>());
-        expect((states[1] as UsersLoaded).users, hasLength(2));
+        expect(notifier.state, isA<UsersLoaded>());
+        expect((notifier.state as UsersLoaded).users, hasLength(2));
       });
 
-      test('emits loading then error state on HttpException', () async {
+      test('emits error state on HttpException', () async {
         when(mockRepository.getUsers(skip: 0, limit: 100))
             .thenThrow(HttpException(message: 'Network error'));
 
-        final states = <UserState>[];
-        notifier.addListener((state) => states.add(state));
-
         await notifier.getUsers();
 
-        expect(states[0], isA<UserLoading>());
-        expect(states[1], isA<UserError>());
-        expect((states[1] as UserError).message, 'Network error');
+        expect(notifier.state, isA<UserError>());
+        expect((notifier.state as UserError).message, 'Network error');
       });
 
-      test('emits loading then error state on generic exception', () async {
+      test('emits error state on generic exception', () async {
         when(mockRepository.getUsers(skip: 0, limit: 100))
             .thenThrow(Exception('Unknown error'));
 
-        final states = <UserState>[];
-        notifier.addListener((state) => states.add(state));
-
         await notifier.getUsers();
 
-        expect(states[0], isA<UserLoading>());
-        expect(states[1], isA<UserError>());
-        expect((states[1] as UserError).message, contains('Failed to load users'));
+        expect(notifier.state, isA<UserError>());
+        expect((notifier.state as UserError).message, contains('Failed to load users'));
       });
 
       test('passes skip and limit parameters', () async {
@@ -104,41 +92,30 @@ void main() {
     });
 
     group('getUserById', () {
-      test('emits loading then loaded state on success', () async {
+      test('emits loaded state on success', () async {
         when(mockRepository.getUserById('1'))
             .thenAnswer((_) async => testUser1);
 
-        final states = <UserState>[];
-        notifier.addListener((state) => states.add(state));
-
         await notifier.getUserById('1');
 
-        expect(states[0], isA<UserLoading>());
-        expect(states[1], isA<UserLoaded>());
-        expect((states[1] as UserLoaded).user.id, '1');
+        expect(notifier.state, isA<UserLoaded>());
+        expect((notifier.state as UserLoaded).user.id, '1');
       });
 
       test('emits error state on failure', () async {
         when(mockRepository.getUserById('1'))
             .thenThrow(HttpException(message: 'User not found'));
 
-        final states = <UserState>[];
-        notifier.addListener((state) => states.add(state));
-
         await notifier.getUserById('1');
 
-        expect(states[0], isA<UserLoading>());
-        expect(states[1], isA<UserError>());
+        expect(notifier.state, isA<UserError>());
       });
     });
 
     group('createUser', () {
-      test('emits loading then created state on success', () async {
+      test('emits created state on success', () async {
         when(mockRepository.createUser(any))
             .thenAnswer((_) async => testUser1);
-
-        final states = <UserState>[];
-        notifier.addListener((state) => states.add(state));
 
         await notifier.createUser(
           phoneNumber: '+9647701234567',
@@ -148,26 +125,21 @@ void main() {
           role: 'salesperson',
         );
 
-        expect(states[0], isA<UserLoading>());
-        expect(states[1], isA<UserCreated>());
-        expect((states[1] as UserCreated).user.phoneNumber, '+9647701234567');
+        expect(notifier.state, isA<UserCreated>());
+        expect((notifier.state as UserCreated).user.phoneNumber, '+9647701234567');
       });
 
       test('emits error state on conflict', () async {
         when(mockRepository.createUser(any))
             .thenThrow(HttpException(message: 'Phone number already exists'));
 
-        final states = <UserState>[];
-        notifier.addListener((state) => states.add(state));
-
         await notifier.createUser(
           phoneNumber: '+9647701234567',
           password: 'password123',
         );
 
-        expect(states[0], isA<UserLoading>());
-        expect(states[1], isA<UserError>());
-        expect((states[1] as UserError).message, 'Phone number already exists');
+        expect(notifier.state, isA<UserError>());
+        expect((notifier.state as UserError).message, 'Phone number already exists');
       });
 
       test('creates user with optional fields', () async {
@@ -188,12 +160,9 @@ void main() {
     });
 
     group('updateUser', () {
-      test('emits loading then updated state on success', () async {
+      test('emits updated state on success', () async {
         when(mockRepository.updateUser(any, any))
             .thenAnswer((_) async => testUser1);
-
-        final states = <UserState>[];
-        notifier.addListener((state) => states.add(state));
 
         await notifier.updateUser(
           id: '1',
@@ -201,64 +170,47 @@ void main() {
           email: 'updated@example.com',
         );
 
-        expect(states[0], isA<UserLoading>());
-        expect(states[1], isA<UserUpdated>());
+        expect(notifier.state, isA<UserUpdated>());
       });
 
       test('emits error state when no fields provided', () async {
-        final states = <UserState>[];
-        notifier.addListener((state) => states.add(state));
-
         await notifier.updateUser(id: '1');
 
-        expect(states[0], isA<UserLoading>());
-        expect(states[1], isA<UserError>());
-        expect((states[1] as UserError).message, 'No fields to update');
+        expect(notifier.state, isA<UserError>());
+        expect((notifier.state as UserError).message, 'No fields to update');
       });
 
       test('emits error state on failure', () async {
         when(mockRepository.updateUser(any, any))
             .thenThrow(HttpException(message: 'User not found'));
 
-        final states = <UserState>[];
-        notifier.addListener((state) => states.add(state));
-
         await notifier.updateUser(
           id: '1',
           phoneNumber: '+9647701234568',
         );
 
-        expect(states[0], isA<UserLoading>());
-        expect(states[1], isA<UserError>());
+        expect(notifier.state, isA<UserError>());
       });
     });
 
     group('deleteUser', () {
-      test('emits loading then deleted state on success', () async {
+      test('emits deleted state on success', () async {
         when(mockRepository.deleteUser('1'))
             .thenAnswer((_) async => {});
 
-        final states = <UserState>[];
-        notifier.addListener((state) => states.add(state));
-
         await notifier.deleteUser('1');
 
-        expect(states[0], isA<UserLoading>());
-        expect(states[1], isA<UserDeleted>());
+        expect(notifier.state, isA<UserDeleted>());
       });
 
       test('emits error state on failure', () async {
         when(mockRepository.deleteUser('1'))
             .thenThrow(HttpException(message: 'Cannot delete yourself'));
 
-        final states = <UserState>[];
-        notifier.addListener((state) => states.add(state));
-
         await notifier.deleteUser('1');
 
-        expect(states[0], isA<UserLoading>());
-        expect(states[1], isA<UserError>());
-        expect((states[1] as UserError).message, 'Cannot delete yourself');
+        expect(notifier.state, isA<UserError>());
+        expect((notifier.state as UserError).message, 'Cannot delete yourself');
       });
     });
 

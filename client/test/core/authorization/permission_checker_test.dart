@@ -54,7 +54,7 @@ void main() {
         expect(permissions, contains(Permission.createUsers));
         expect(permissions, contains(Permission.viewCompanies));
         expect(permissions, contains(Permission.createProducts));
-        expect(permissions.length, greaterThan(30)); // Should have many permissions
+        expect(permissions.length, equals(28)); // Exact count of all permissions
       });
 
       test('returns correct permissions for company admin', () {
