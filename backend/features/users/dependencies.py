@@ -2,6 +2,7 @@
 from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from backend.features.auth.schemas import UserResponse
 from core.dependencies import get_db
 from features.auth.models import User, UserRole
 from features.auth.repository import UserRepository

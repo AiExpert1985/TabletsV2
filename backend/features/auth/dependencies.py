@@ -4,8 +4,6 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer
 from fastapi.security.http import HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.features.auth.schemas import UserResponse
-from backend.features.auth.user_service import UserService
 from core.dependencies import get_db
 from core.security import verify_access_token
 from core.exceptions import InvalidTokenException, TokenExpiredException

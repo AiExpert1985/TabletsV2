@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'http_interceptor.dart';
 
 /// Logging interceptor - logs all HTTP requests/responses

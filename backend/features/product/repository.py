@@ -4,7 +4,6 @@ Product repository with company-aware data access.
 Example implementation of CompanyAwareRepository pattern.
 """
 from typing import Sequence
-from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from core.base_repository import CompanyAwareRepository

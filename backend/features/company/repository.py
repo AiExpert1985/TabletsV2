@@ -1,5 +1,4 @@
 """Repository layer for company feature - data access operations."""
-import uuid
 from datetime import datetime, timezone
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession

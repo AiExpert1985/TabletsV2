@@ -1,16 +1,14 @@
 """Business logic for authentication."""
 import uuid
 from datetime import datetime, timedelta, timezone
-from features.auth.models import User, RefreshToken
+from features.auth.models import User
 from features.auth.repository import (
     UserRepository,
     RefreshTokenRepository,
 )
 from core.security import (
     normalize_phone_number,
-    hash_password,
     verify_password,
-    validate_password_strength,
     create_access_token,
     create_refresh_token,
     verify_refresh_token,
@@ -19,7 +17,6 @@ from core.security import (
 )
 from core.config import get_settings
 from core.exceptions import (
-    PhoneAlreadyExistsException,
     InvalidCredentialsException,
     AccountDeactivatedException,
     InvalidTokenException,
