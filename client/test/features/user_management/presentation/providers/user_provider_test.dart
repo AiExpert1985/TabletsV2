@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:client/core/network/http_exception.dart';
 import 'package:client/features/auth/domain/entities/user.dart';
-import 'package:client/features/user_management/domain/repositories/user_repository.dart';
 import 'package:client/features/user_management/presentation/providers/user_provider.dart';
 import 'package:client/features/user_management/presentation/providers/user_state.dart';
 

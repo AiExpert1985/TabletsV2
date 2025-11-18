@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:client/core/network/http_exception.dart';
 import 'package:client/features/auth/data/models/user_model.dart';
-import 'package:client/features/user_management/data/datasources/user_remote_datasource.dart';
 import 'package:client/features/user_management/data/models/user_create_dto.dart';
 import 'package:client/features/user_management/data/models/user_update_dto.dart';
 import 'package:client/features/user_management/data/repositories/user_repository_impl.dart';
