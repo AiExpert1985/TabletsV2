@@ -14,7 +14,8 @@ from features.company.models import Company
 from features.product.models import Product
 
 # Import repositories and services
-from features.auth.repository import UserRepository, RefreshTokenRepository
+from features.users.repository import UserRepository
+from features.auth.repository import RefreshTokenRepository
 from features.auth.auth_services import AuthService
 from features.company.repository import CompanyRepository
 

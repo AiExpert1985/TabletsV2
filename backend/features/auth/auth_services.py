@@ -2,10 +2,8 @@
 import uuid
 from datetime import datetime, timedelta, timezone
 from features.auth.models import User
-from features.auth.repository import (
-    UserRepository,
-    RefreshTokenRepository,
-)
+from features.users.repository import UserRepository
+from features.auth.repository import RefreshTokenRepository
 from core.security import (
     normalize_phone_number,
     verify_password,

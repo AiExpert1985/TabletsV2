@@ -48,12 +48,16 @@ features/{feature_name}/
 
 **Current Features:**
 - `auth/` - Authentication (login, tokens, /auth/me) - **owns User model**
-- `users/` - User management CRUD (imports from auth) - system admin only
+- `users/` - User management CRUD + UserRepository - system admin only
 - `company/` - Company management - system admin only
 - `product/` - Product CRUD with multi-tenancy
-- `authorization/` - Permission system (36 granular permissions)
+- `authorization/` - Permission system (36 granular permissions + permission checker)
 
 **Dependency Flow:** `users → auth` (one-way, clean)
+
+**Repository Organization:**
+- `auth/repository.py` - RefreshTokenRepository only
+- `users/repository.py` - UserRepository (user CRUD belongs with user management)
 
 ### 3. Dependencies Organization
 **Every feature MUST have `dependencies.py`** containing:
@@ -99,6 +103,42 @@ features/{feature_name}/
 - System roles: `system_admin`, `company_admin`, `user`
 - Company roles: admin, accountant, sales_manager, warehouse_keeper, salesperson, viewer
 - Type-safe `PermissionGroups` class (prevents typos)
+
+### 6. Permission-Based Authorization (NEW!)
+
+**Pattern:** Permission-based access control with centralized checking
+
+**Why:** Prepares for future dynamic roles while keeping current hardcoded mappings simple.
+
+**Implementation:**
+```python
+# In routes/services - declarative permission checks
+from features.authorization.permission_checker import require_permission
+from features.authorization.permissions import Permission
+
+require_permission(current_user, Permission.CREATE_PRODUCTS)
+require_permission(current_user, Permission.CREATE_PRODUCTS, company_id=product.company_id)
+```
+
+**Benefits:**
+- ✅ Self-documenting - clear what permission each endpoint needs
+- ✅ Centralized logic - all authorization in one place
+- ✅ Easy testing - test permission checker once, not role combinations
+- ✅ Future-proof - can migrate to dynamic roles without changing endpoints
+
+**Available Functions:**
+- `require_permission(user, perm, company_id?)` - Main authorization check
+- `require_any_permission(user, [perms], company_id?)` - OR logic
+- `require_all_permissions(user, [perms], company_id?)` - AND logic
+- `require_system_admin(user)` - System admin only
+- `require_company_admin(user)` - Admin only (system or company)
+
+**Location:** `features/authorization/permission_checker.py`
+
+**Migration Path:**
+- Current: Hardcoded role → permission mapping in `role_permissions.py`
+- Future: Can move mappings to database without changing endpoints
+- Endpoints only care about permissions, not roles
 
 ---
 
@@ -233,6 +273,17 @@ enum AuthStatus { loading, authenticated }
 
 ## Change Log (Key Decisions)
 
+### 2025-11-18: Permission-Based Authorization
+- **Change:** Created centralized `permission_checker.py` for authorization
+- **Why:** Prepare for dynamic roles, make code more maintainable and testable
+- **Pattern:** `require_permission(user, Permission.CREATE_PRODUCTS)` instead of role checks
+- **Benefits:** Self-documenting endpoints, centralized logic, easy testing, future-proof
+
+### 2025-11-18: UserRepository Moved to users/
+- **Change:** Moved `UserRepository` from `auth/repository.py` to `users/repository.py`
+- **Why:** User CRUD belongs with user management, not authentication
+- **Impact:** `auth/` now only has RefreshTokenRepository (authentication-specific)
+
 ### 2025-11-18: Auth/Users Feature Split
 - **Change:** Split `features/auth/` into `auth/` (authentication) + `users/` (user management)
 - **Why:** Align with UI (separate screens), clear responsibilities
@@ -264,4 +315,4 @@ enum AuthStatus { loading, authenticated }
 
 ---
 
-**Last Updated:** 2025-11-18
+**Last Updated:** 2025-11-18 (Permission-based authorization + UserRepository reorganization)

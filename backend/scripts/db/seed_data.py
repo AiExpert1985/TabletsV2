@@ -25,7 +25,7 @@ from features.company.models import Company
 from features.product.models import Product
 from features.company.repository import CompanyRepository
 from features.company.service import CompanyService
-from features.auth.repository import UserRepository
+from features.users.repository import UserRepository
 from features.users.service import UserService
 from features.product.repository import ProductRepository
 from features.product.service import ProductService

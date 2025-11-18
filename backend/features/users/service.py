@@ -1,7 +1,7 @@
 """Business logic for user management (system admin operations)."""
 import uuid
 from features.auth.models import User, UserRole
-from features.auth.repository import UserRepository
+from features.users.repository import UserRepository
 from core.security import hash_password, normalize_phone_number
 from core.exceptions import (
     PhoneAlreadyExistsException,

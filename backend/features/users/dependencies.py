@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.features.auth.schemas import UserResponse
 from core.dependencies import get_db
 from features.auth.models import User, UserRole
-from features.auth.repository import UserRepository
+from features.users.repository import UserRepository
 from features.auth.dependencies import CurrentUser
 from features.users.service import UserService
 

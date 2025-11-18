@@ -4,7 +4,8 @@ from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from features.auth.models import User, UserRole
-from features.auth.repository import UserRepository, RefreshTokenRepository
+from features.users.repository import UserRepository
+from features.auth.repository import RefreshTokenRepository
 from features.company.models import Company
 from features.company.repository import CompanyRepository
 from core.security import hash_password

@@ -4,7 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from features.auth.auth_services import AuthService, TokenPair
 from features.auth.models import User
-from features.auth.repository import UserRepository, RefreshTokenRepository
+from features.users.repository import UserRepository
+from features.auth.repository import RefreshTokenRepository
 from core.exceptions import (
     PhoneAlreadyExistsException,
     InvalidCredentialsException,
