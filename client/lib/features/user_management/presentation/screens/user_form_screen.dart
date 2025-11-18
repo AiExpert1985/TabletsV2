@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:client/core/authorization/permission_checker.dart';
 import 'package:client/core/authorization/permissions.dart';
+import 'package:client/core/providers/company_provider.dart';
 import 'package:client/features/auth/domain/entities/user.dart';
 import 'package:client/features/auth/domain/entities/user_role.dart';
 import 'package:client/features/auth/presentation/providers/auth_provider.dart';
@@ -24,9 +25,9 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _emailController = TextEditingController();
-  final _companyIdController = TextEditingController();
 
   String _selectedRole = UserRole.viewer;
+  String? _selectedCompanyId; // Selected company ID
   bool _isActive = true;
   bool _isLoading = false;
   User? _existingUser;
@@ -37,7 +38,8 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
   void initState() {
     super.initState();
     if (_isEditMode) {
-      _loadUser();
+      // Delay provider update until after widget tree is built
+      Future.microtask(() => _loadUser());
     }
   }
 
@@ -46,7 +48,6 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
     _phoneController.dispose();
     _passwordController.dispose();
     _emailController.dispose();
-    _companyIdController.dispose();
     super.dispose();
   }
 
@@ -55,12 +56,14 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
   }
 
   void _populateForm(User user) {
-    _existingUser = user;
-    _phoneController.text = user.phoneNumber;
-    _emailController.text = user.email ?? '';
-    _companyIdController.text = user.companyId ?? '';
-    _selectedRole = user.role;
-    _isActive = user.isActive;
+    setState(() {
+      _existingUser = user;
+      _phoneController.text = user.phoneNumber;
+      _emailController.text = user.email ?? '';
+      _selectedCompanyId = user.companyId;
+      _selectedRole = user.role;
+      _isActive = user.isActive;
+    });
   }
 
   Future<void> _submit() async {
@@ -84,11 +87,9 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
             password: _passwordController.text.trim().isEmpty
                 ? null
                 : _passwordController.text.trim(),
-            companyId: _companyIdController.text.trim().isEmpty
-                ? null
-                : (_companyIdController.text.trim() != _existingUser?.companyId
-                    ? _companyIdController.text.trim()
-                    : null),
+            companyId: _selectedCompanyId != _existingUser?.companyId
+                ? _selectedCompanyId
+                : null,
             role: _selectedRole != _existingUser?.role ? _selectedRole : null,
             isActive: _isActive != _existingUser?.isActive ? _isActive : null,
           );
@@ -99,9 +100,7 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
             email: _emailController.text.trim().isEmpty
                 ? null
                 : _emailController.text.trim(),
-            companyId: _companyIdController.text.trim().isEmpty
-                ? null
-                : _companyIdController.text.trim(),
+            companyId: _selectedCompanyId,
             role: _selectedRole,
             isActive: _isActive,
           );
@@ -252,18 +251,49 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _companyIdController,
-                      decoration: const InputDecoration(
-                        labelText: 'Company ID (optional, required for non-system-admin)',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (_selectedRole != UserRole.systemAdmin &&
-                            (value == null || value.trim().isEmpty)) {
-                          return 'Company ID is required for non-system-admin users';
-                        }
-                        return null;
+                    // Company Dropdown
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final companiesAsync = ref.watch(companiesProvider);
+
+                        return companiesAsync.when(
+                          data: (companies) {
+                            // Filter active companies only
+                            final activeCompanies = companies.where((c) => c.isActive).toList();
+
+                            return DropdownButtonFormField<String>(
+                              value: _selectedCompanyId,
+                              decoration: const InputDecoration(
+                                labelText: 'Company',
+                                hintText: 'Select a company',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: [
+                                const DropdownMenuItem<String>(
+                                  value: null,
+                                  child: Text('None (System Admin only)'),
+                                ),
+                                ...activeCompanies.map((company) {
+                                  return DropdownMenuItem<String>(
+                                    value: company.id,
+                                    child: Text(company.name),
+                                  );
+                                }),
+                              ],
+                              onChanged: (value) {
+                                setState(() => _selectedCompanyId = value);
+                              },
+                              validator: (value) {
+                                if (_selectedRole != UserRole.systemAdmin && value == null) {
+                                  return 'Company is required for non-system-admin users';
+                                }
+                                return null;
+                              },
+                            );
+                          },
+                          loading: () => const LinearProgressIndicator(),
+                          error: (error, stack) => Text('Error loading companies: $error'),
+                        );
                       },
                     ),
                     const SizedBox(height: 16),
