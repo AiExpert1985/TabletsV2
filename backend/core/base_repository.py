@@ -107,7 +107,7 @@ class CompanyAwareRepository(Generic[ModelType]):
         Raises:
             HTTPException: 403 if trying to access another company's data
         """
-        query = self._build_base_query().where(self.model.id == id)
+        query = self._build_base_query().where(self.model.id == id)  # type: ignore[attr-defined]
         query = self._apply_company_filter(query, company_ctx)
 
         result = await self.db.execute(query)
@@ -147,4 +147,4 @@ class CompanyAwareRepository(Generic[ModelType]):
             HTTPException: 403 if record belongs to different company
         """
         if hasattr(record, 'company_id'):
-            company_ctx.ensure_company_access(record.company_id)
+            company_ctx.ensure_company_access(record.company_id)  # type: ignore[attr-defined]
