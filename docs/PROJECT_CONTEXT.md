@@ -287,6 +287,61 @@ When starting a new feature or fixing a bug:
 
 ---
 
+## Documentation Strategy for AI Assistants
+
+**Goal:** Minimize documentation sprawl - use the 3-file structure defined in AI_GUIDELINES.md.
+
+### Where to Put Information
+
+**When you need to document something, use this decision tree:**
+
+1. **Operational/How-to-run info?** → **README.md**
+   - Installation steps, setup commands, running tests
+   - Scripts reference, API endpoints
+   - Troubleshooting common issues
+   - Example: Database setup commands, seed data credentials
+
+2. **Architectural/Why decisions?** → **docs/PROJECT_CONTEXT.md**
+   - Design patterns and rationale
+   - Feature status (completed vs deferred)
+   - Architectural trade-offs
+   - Multi-tenancy design, testing philosophy
+   - Example: Why we use ABC instead of Protocol for repositories
+
+3. **Working style/Code standards?** → **docs/AI_GUIDELINES.md**
+   - Code quality standards
+   - Abstraction guidelines
+   - Communication tone
+   - Example: When to abstract, function length limits
+
+4. **Implementation-level reference for specific feature?** → **Co-located guide** (ONLY if absolutely necessary)
+   - Detailed usage patterns and code examples
+   - Co-locate with the feature (e.g., `features/authorization/PERMISSIONS_GUIDE.md`)
+   - Must provide significant value beyond code comments
+   - Example: PERMISSIONS_GUIDE.md (type-safe permission patterns), COMPANY_ISOLATION_GUIDE.md (multi-tenancy patterns)
+
+### Rules for AI Assistants
+
+**❌ NEVER create:**
+- New top-level documentation files
+- Nested README files in subdirectories (except when truly needed for complex features)
+- Duplicate information across multiple files
+
+**✅ ALWAYS:**
+- Check if information already exists in the 3 main docs
+- Update existing documentation instead of creating new files
+- Merge architectural insights into PROJECT_CONTEXT.md
+- Merge operational info into main README.md
+- Ask user before creating feature-specific guides
+
+**Exception:** Feature-specific implementation guides (like PERMISSIONS_GUIDE.md or COMPANY_ISOLATION_GUIDE.md) are acceptable ONLY when:
+- They provide detailed implementation patterns and code examples
+- Information is too detailed for PROJECT_CONTEXT.md (would clutter it)
+- They're co-located with the feature they document
+- They serve as reference for developers working on that specific area
+
+---
+
 ## Recent Changes & Sessions
 
 ### Session: Initial Setup
@@ -314,6 +369,13 @@ When starting a new feature or fixing a bug:
 - **Interface completeness:** Added missing methods to IUserRepository (save, get_all, update, delete)
 - **Tests:** Added 42 service layer tests (13 user, 15 product, 14 company)
 - **Commits:** d1907c8, 99d72ab, 09f8ae2
+
+### Session: Documentation Strategy (2025-11-18)
+- **Change:** Added documentation strategy section to PROJECT_CONTEXT.md
+- **Goal:** Prevent AI assistants from creating unnecessary documentation files
+- **Decision tree:** README.md (operational), PROJECT_CONTEXT.md (architectural), AI_GUIDELINES.md (working style)
+- **Cleanup:** Deleted client/README.md (useless Flutter boilerplate)
+- **Exception:** Feature-specific guides allowed when co-located and providing detailed implementation patterns
 
 ---
 
