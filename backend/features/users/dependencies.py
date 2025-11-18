@@ -54,7 +54,6 @@ def build_user_response(user: User) -> "UserResponse":
         email=user.email,
         company_id=str(user.company_id) if user.company_id else None,
         role=user.role.value,
-        company_roles=user.company_roles,
         permissions=permissions,
         is_active=user.is_active,
         is_phone_verified=user.is_phone_verified,
