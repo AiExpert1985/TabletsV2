@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:client/core/network/http_exception.dart';
 import 'package:client/features/auth/domain/entities/user.dart';
+import 'package:client/features/user_management/data/models/user_create_dto.dart';
+import 'package:client/features/user_management/data/models/user_update_dto.dart';
 import 'package:client/features/user_management/presentation/providers/user_provider.dart';
 import 'package:client/features/user_management/presentation/providers/user_state.dart';
 
@@ -11,6 +13,15 @@ void main() {
   group('UserNotifier', () {
     late UserNotifier notifier;
     late MockUserRepository mockRepository;
+
+    // Register fallback values for custom types
+    setUpAll(() {
+      registerFallbackValue(UserCreateDto(
+        phoneNumber: '',
+        password: '',
+      ));
+      registerFallbackValue(UserUpdateDto());
+    });
 
     setUp(() {
       mockRepository = MockUserRepository();
@@ -131,7 +142,7 @@ void main() {
 
     group('createUser', () {
       test('emits loading then created state on success', () async {
-        when(mockRepository.createUser(argThat(anything)))
+        when(mockRepository.createUser(any))
             .thenAnswer((_) async => testUser1);
 
         final states = <UserState>[];
@@ -151,7 +162,7 @@ void main() {
       });
 
       test('emits error state on conflict', () async {
-        when(mockRepository.createUser(argThat(anything)))
+        when(mockRepository.createUser(any))
             .thenThrow(HttpException(message: 'Phone number already exists'));
 
         final states = <UserState>[];
@@ -168,7 +179,7 @@ void main() {
       });
 
       test('creates user with optional fields', () async {
-        when(mockRepository.createUser(argThat(anything)))
+        when(mockRepository.createUser(any))
             .thenAnswer((_) async => testUser1);
 
         await notifier.createUser(
@@ -180,13 +191,13 @@ void main() {
           isActive: false,
         );
 
-        verify(mockRepository.createUser(argThat(anything))).called(1);
+        verify(mockRepository.createUser(any)).called(1);
       });
     });
 
     group('updateUser', () {
       test('emits loading then updated state on success', () async {
-        when(mockRepository.updateUser(argThat(anything), argThat(anything)))
+        when(mockRepository.updateUser(any, any))
             .thenAnswer((_) async => testUser1);
 
         final states = <UserState>[];
@@ -214,7 +225,7 @@ void main() {
       });
 
       test('emits error state on failure', () async {
-        when(mockRepository.updateUser(argThat(anything), argThat(anything)))
+        when(mockRepository.updateUser(any, any))
             .thenThrow(HttpException(message: 'User not found'));
 
         final states = <UserState>[];
