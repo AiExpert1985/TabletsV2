@@ -19,7 +19,7 @@ sys.path.insert(0, str(backend_dir))
 
 from core.database import AsyncSessionLocal, init_db
 from features.auth.repository import UserRepository
-from features.auth.user_service import UserService
+from features.users.service import UserService
 from features.auth.models import UserRole
 from core.exceptions import PhoneAlreadyExistsException
 

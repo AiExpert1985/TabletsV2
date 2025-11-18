@@ -209,6 +209,7 @@ class TestUserRepository:
         updated_user = await user_repo.get_by_id(str(test_user.id))
 
         # Assert
+        assert updated_user is not None
         assert updated_user.is_active is False
 
     @pytest.mark.asyncio

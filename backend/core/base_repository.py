@@ -4,17 +4,15 @@ Base repository with company-aware filtering support.
 Provides reusable patterns for multi-tenant data access.
 """
 from __future__ import annotations
-from typing import TypeVar, Generic, Type, Sequence, TYPE_CHECKING
+from typing import TypeVar, Generic, Type, Sequence
 from uuid import UUID
 from sqlalchemy import select, Select
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.company_context import CompanyContext
+from core.database import Base
 
-if TYPE_CHECKING:
-    from core.database import Base
-
-# Use string literal for bound to satisfy strict type checkers
-ModelType = TypeVar("ModelType", bound="Base")
+# TypeVar for generic repository - bound to SQLAlchemy Base
+ModelType = TypeVar("ModelType", bound=Base)
 
 
 class CompanyAwareRepository(Generic[ModelType]):
