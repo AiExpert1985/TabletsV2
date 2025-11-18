@@ -108,8 +108,10 @@ await db.refresh(user)  # Doesn't load relationships
 
 ## Flutter Client Patterns
 
-### Clean Architecture
-**Flow:** `Screen → Provider → Repository → DataSource → API`
+### Clean Architecture (CRITICAL)
+**Flow:** `Screen → Provider → Service → Repository → DataSource → API`
+
+**RULE:** Every feature MUST have a service layer. Providers NEVER call repositories directly.
 
 ```
 features/{feature_name}/
@@ -119,12 +121,27 @@ features/{feature_name}/
   │   └── repositories/      # Repository impl
   ├── domain/
   │   ├── entities/          # Domain models
-  │   └── repositories/      # Repository interface
+  │   ├── repositories/      # Repository interface
+  │   └── services/          # Business logic (REQUIRED)
   └── presentation/
       ├── providers/         # Riverpod StateNotifier
       ├── screens/           # UI screens
       └── widgets/           # Reusable components
 ```
+
+**Service Layer Responsibilities:**
+- Business logic and validation
+- Data normalization (e.g., phone numbers)
+- Error mapping (technical → user-friendly messages)
+- DTO creation and manipulation
+- Single interface for feature communication
+
+**Why Services Are Mandatory:**
+1. **Separation of Concerns:** Providers focus on state, services on logic
+2. **Testability:** Business logic tested independently from state management
+3. **Consistency:** Mirrors backend pattern (routes → services → repos)
+4. **Reusability:** Other features communicate only through services
+5. **Maintainability:** Changes to business logic don't affect state management
 
 ### State Management - Sealed Classes
 ```dart
