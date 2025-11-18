@@ -10,12 +10,8 @@ from core.exceptions import PhoneAlreadyExistsException, UserNotFoundException
 def mock_user_repo():
     """Create mock user repository."""
     repo = Mock()
-    repo.db = Mock()
-    repo.db.add = Mock()
-    repo.db.flush = AsyncMock()
-    repo.db.refresh = AsyncMock()
-    repo.db.commit = AsyncMock()
     repo.phone_exists = AsyncMock(return_value=False)
+    repo.save = AsyncMock()
     repo.get_by_id = AsyncMock()
     repo.get_all = AsyncMock()
     repo.update = AsyncMock()
@@ -38,6 +34,8 @@ class TestUserService:
         """Create user with valid data succeeds."""
         # Arrange
         mock_user_repo.phone_exists.return_value = False
+        mock_user = Mock(spec=User)
+        mock_user_repo.save.return_value = mock_user
 
         # Act
         user = await user_service.create_user(
@@ -49,8 +47,8 @@ class TestUserService:
 
         # Assert
         assert mock_user_repo.phone_exists.called
-        assert mock_user_repo.db.add.called
-        assert mock_user_repo.db.flush.called
+        assert mock_user_repo.save.called
+        assert user == mock_user
 
     @pytest.mark.asyncio
     async def test_create_user_phone_exists_raises_exception(self, user_service, mock_user_repo):

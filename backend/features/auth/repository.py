@@ -60,6 +60,21 @@ class IUserRepository(ABC):
         """Update user's password."""
         pass
 
+    @abstractmethod
+    async def get_all(self, skip: int = 0, limit: int = 100) -> list[User]:
+        """Get all users with pagination."""
+        pass
+
+    @abstractmethod
+    async def update(self, user: User) -> User:
+        """Update existing user."""
+        pass
+
+    @abstractmethod
+    async def delete(self, user: User) -> None:
+        """Delete a user."""
+        pass
+
 
 class IRefreshTokenRepository(ABC):
     """Interface for refresh token repository."""
