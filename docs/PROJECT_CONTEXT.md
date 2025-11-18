@@ -29,10 +29,14 @@ Multi-tenant ERP system with FastAPI backend and Flutter client, following Clean
 **Company users:** Automatic filtering by their `company_id`
 **How:** CompanyContext dependency injection + BaseRepository pattern
 
-### 3. Repository Pattern
-**Decision:** ABC (Abstract Base Classes) instead of Protocol
-**Rationale:** Better clarity, IDE support, runtime enforcement
-**Previous:** Used Protocol (structural typing)
+### 3. Repository Pattern (Concrete Classes Only)
+**Decision:** No abstractions (ABC/Protocol) for repositories - use concrete classes directly
+**Rationale:**
+- YAGNI - Won't implement multiple repository backends
+- Python's duck typing handles mocking without interfaces
+- Reduces maintenance overhead (no interface/implementation sync)
+- Consistent with service layer (no abstractions there either)
+**Previous:** Used ABC (Abstract Base Classes), removed for pragmatism
 
 ### 4. Service Layer Design
 **Decision:** Explicit service layer between providers and repositories
@@ -366,7 +370,7 @@ When starting a new feature or fixing a bug:
 - **Solution:** Created UserService, ProductService, CompanyService; refactored ALL routes/scripts to use services
 - **Pattern:** `await service.create_user(...)` ✅ NOT `User(...); repo.db.add()` ❌
 - **Cleanup:** Removed unused signup code (auth/services.py → auth_services.py, routes.py → auth_routes.py for consistency)
-- **Interface completeness:** Added missing methods to IUserRepository (save, get_all, update, delete)
+- **Repository completeness:** Added missing methods to UserRepository (save, get_all, update, delete)
 - **Tests:** Added 42 service layer tests (13 user, 15 product, 14 company)
 - **Commits:** d1907c8, 99d72ab, 09f8ae2
 
@@ -376,6 +380,18 @@ When starting a new feature or fixing a bug:
 - **Decision tree:** README.md (operational), PROJECT_CONTEXT.md (architectural), AI_GUIDELINES.md (working style)
 - **Cleanup:** Deleted client/README.md (useless Flutter boilerplate)
 - **Exception:** Feature-specific guides allowed when co-located and providing detailed implementation patterns
+
+### Session: Remove Repository Abstractions (2025-11-18)
+- **Decision:** Removed all repository abstractions (IUserRepository, IRefreshTokenRepository, ICompanyRepository)
+- **Rationale:** Pragmatic architecture - YAGNI principle, Python's duck typing handles mocking, reduces maintenance
+- **Changes:**
+  - Removed ABC interfaces from auth/repository.py, company/repository.py
+  - Updated all services to use concrete repository types (UserRepository, RefreshTokenRepository, CompanyRepository)
+  - Updated auth_services.py, user_service.py, company/service.py type hints
+  - Tests continue to work - Mock() doesn't require ABC abstractions
+- **Cleanup:** Removed unused `change_password()` method from UserService and `update_password()` from UserRepository
+- **Pattern:** Consistent with service layer (no abstractions) - services and repositories are concrete classes only
+- **Documentation:** Updated PROJECT_CONTEXT.md and AI_GUIDELINES.md to reflect no-abstraction policy
 
 ---
 

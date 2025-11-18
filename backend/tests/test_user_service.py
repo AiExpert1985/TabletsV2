@@ -16,7 +16,6 @@ def mock_user_repo():
     repo.get_all = AsyncMock()
     repo.update = AsyncMock()
     repo.delete = AsyncMock()
-    repo.update_password = AsyncMock()
     return repo
 
 
@@ -170,20 +169,3 @@ class TestUserService:
         # Act & Assert
         with pytest.raises(ValueError, match="Cannot delete yourself"):
             await user_service.delete_user("123", "123")
-
-    @pytest.mark.asyncio
-    async def test_change_password(self, user_service, mock_user_repo):
-        """Change password calls repository with hashed password."""
-        # Arrange
-        mock_user = Mock(spec=User)
-        mock_user.id = "123"
-        mock_user_repo.get_by_id.return_value = mock_user
-
-        # Act
-        await user_service.change_password("123", "NewPassword123")
-
-        # Assert
-        mock_user_repo.update_password.assert_called_once()
-        call_args = mock_user_repo.update_password.call_args
-        assert call_args[0][0] == "123"  # user_id
-        assert call_args[0][1] != "NewPassword123"  # Should be hashed

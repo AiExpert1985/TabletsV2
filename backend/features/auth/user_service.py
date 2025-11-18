@@ -1,7 +1,7 @@
 """Business logic for user management (system admin operations)."""
 import uuid
 from features.auth.models import User, UserRole
-from features.auth.repository import IUserRepository
+from features.auth.repository import UserRepository
 from core.security import hash_password, normalize_phone_number
 from core.exceptions import (
     PhoneAlreadyExistsException,
@@ -12,9 +12,9 @@ from core.exceptions import (
 class UserService:
     """User management service - handles business logic for user CRUD operations."""
 
-    user_repo: IUserRepository
+    user_repo: UserRepository
 
-    def __init__(self, user_repo: IUserRepository) -> None:
+    def __init__(self, user_repo: UserRepository) -> None:
         self.user_repo = user_repo
 
     async def create_user(
@@ -216,21 +216,3 @@ class UserService:
 
         # 3. Delete
         await self.user_repo.delete(user)
-
-    async def change_password(self, user_id: str, new_password: str) -> None:
-        """
-        Change user password.
-
-        Args:
-            user_id: User UUID
-            new_password: New password (will be hashed)
-
-        Raises:
-            UserNotFoundException: User not found
-        """
-        # Verify user exists
-        await self.get_user(user_id)
-
-        # Hash and update password
-        hashed_password = hash_password(new_password)
-        await self.user_repo.update_password(user_id, hashed_password)

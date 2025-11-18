@@ -1,6 +1,6 @@
 """Business logic for company management (system admin operations)."""
 from features.company.models import Company
-from features.company.repository import ICompanyRepository
+from features.company.repository import CompanyRepository
 from core.exceptions import AppException
 
 
@@ -27,9 +27,9 @@ class CompanyNotFoundException(AppException):
 class CompanyService:
     """Company management service - handles business logic for company operations."""
 
-    company_repo: ICompanyRepository
+    company_repo: CompanyRepository
 
-    def __init__(self, company_repo: ICompanyRepository) -> None:
+    def __init__(self, company_repo: CompanyRepository) -> None:
         self.company_repo = company_repo
 
     async def create_company(self, name: str) -> Company:

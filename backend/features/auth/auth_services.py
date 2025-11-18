@@ -3,8 +3,8 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from features.auth.models import User, RefreshToken
 from features.auth.repository import (
-    IUserRepository,
-    IRefreshTokenRepository,
+    UserRepository,
+    RefreshTokenRepository,
 )
 from core.security import (
     normalize_phone_number,
@@ -47,13 +47,13 @@ class TokenPair:
 class AuthService:
     """Authentication service - handles business logic."""
 
-    user_repo: IUserRepository
-    refresh_token_repo: IRefreshTokenRepository
+    user_repo: UserRepository
+    refresh_token_repo: RefreshTokenRepository
 
     def __init__(
         self,
-        user_repo: IUserRepository,
-        refresh_token_repo: IRefreshTokenRepository,
+        user_repo: UserRepository,
+        refresh_token_repo: RefreshTokenRepository,
     ) -> None:
         self.user_repo = user_repo
         self.refresh_token_repo = refresh_token_repo

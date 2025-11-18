@@ -105,12 +105,14 @@ For simple questions, skip the structure and answer directly.
 
 ## Abstraction Decision Guide
 - External service/API? → **Abstract** (Adapter)
-- Data access? → **Abstract** (Repository)
+- Data access (repositories)? → **Concrete** (Python's duck typing handles testing)
 - Swappable algorithms or rules (present or likely)? → **Abstract** (Strategy)
 - Runtime provider selection? → **Abstract** (Factory)
-- Improves test isolation materially? → **Abstract**
+- Improves test isolation materially? → **Consider**, but mocking works without abstractions in Python
 - Low-volatility, single-use logic? → **Keep simple**
 - **Default:** Start concrete; abstract when need is proven (avoid premature abstraction)
+
+**Note:** Services and repositories use concrete classes only. Tests mock them directly using Python's duck typing.
 
 ## Security
 

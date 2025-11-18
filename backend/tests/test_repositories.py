@@ -173,29 +173,6 @@ class TestUserRepository:
         assert test_user.last_login_at is not None
 
     @pytest.mark.asyncio
-    async def test_update_password(
-        self,
-        user_repo: UserRepository,
-        test_user: User,
-        db_session: AsyncSession,
-    ):
-        """Update password changes password hash."""
-        # Arrange
-        original_hash = test_user.hashed_password
-        new_hash = hash_password("NewPassword123")
-
-        # Act
-        await user_repo.update_password(str(test_user.id), new_hash)
-        await db_session.flush()  # Flush to make changes visible
-
-        # Refresh user object
-        await db_session.refresh(test_user)
-
-        # Assert
-        assert test_user.hashed_password != original_hash
-        assert test_user.hashed_password == new_hash
-
-    @pytest.mark.asyncio
     async def test_get_all_pagination(
         self,
         user_repo: UserRepository,

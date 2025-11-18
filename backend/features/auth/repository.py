@@ -1,121 +1,12 @@
-"""Repository layer for auth feature - abstracts database operations."""
+"""Repository layer for auth feature - data access operations."""
 import uuid
-from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from features.auth.models import User, RefreshToken
 
 
-# ============================================================================
-# Repository Interfaces (Abstract Base Classes)
-# ============================================================================
-
-class IUserRepository(ABC):
-    """Interface for user repository."""
-
-    @abstractmethod
-    async def create(
-        self,
-        phone_number: str,
-        hashed_password: str,
-        company_id: str | None = None,
-        role: str = "user"
-    ) -> User:
-        """Create new user."""
-        pass
-
-    @abstractmethod
-    async def save(self, user: User) -> User:
-        """Save user model to database."""
-        pass
-
-    @abstractmethod
-    async def get_by_phone(self, phone_number: str) -> User | None:
-        """Get user by phone number."""
-        pass
-
-    @abstractmethod
-    async def get_by_id(self, user_id: str) -> User | None:
-        """Get user by ID."""
-        pass
-
-    @abstractmethod
-    async def phone_exists(self, phone_number: str) -> bool:
-        """Check if phone number exists."""
-        pass
-
-    @abstractmethod
-    async def count_users(self) -> int:
-        """Count total users."""
-        pass
-
-    @abstractmethod
-    async def update_last_login(self, user_id: str) -> None:
-        """Update user's last login timestamp."""
-        pass
-
-    @abstractmethod
-    async def update_password(self, user_id: str, hashed_password: str) -> None:
-        """Update user's password."""
-        pass
-
-    @abstractmethod
-    async def get_all(self, skip: int = 0, limit: int = 100) -> list[User]:
-        """Get all users with pagination."""
-        pass
-
-    @abstractmethod
-    async def update(self, user: User) -> User:
-        """Update existing user."""
-        pass
-
-    @abstractmethod
-    async def delete(self, user: User) -> None:
-        """Delete a user."""
-        pass
-
-
-class IRefreshTokenRepository(ABC):
-    """Interface for refresh token repository."""
-
-    @abstractmethod
-    async def create(
-        self,
-        user_id: str,
-        token_id: str,
-        token_hash: str,
-        expires_at: datetime
-    ) -> RefreshToken:
-        """Create new refresh token."""
-        pass
-
-    @abstractmethod
-    async def get_by_token_id(self, token_id: str) -> RefreshToken | None:
-        """Get refresh token by token_id."""
-        pass
-
-    @abstractmethod
-    async def revoke(self, token_id: str) -> None:
-        """Revoke a refresh token."""
-        pass
-
-    @abstractmethod
-    async def revoke_all_for_user(self, user_id: str) -> None:
-        """Revoke all refresh tokens for a user."""
-        pass
-
-    @abstractmethod
-    async def delete_expired(self) -> int:
-        """Delete expired tokens."""
-        pass
-
-
-# ============================================================================
-# Repository Implementations
-# ============================================================================
-
-class UserRepository(IUserRepository):
+class UserRepository:
     """User repository implementation."""
 
     db: AsyncSession
@@ -187,17 +78,6 @@ class UserRepository(IUserRepository):
             .values(last_login_at=datetime.now(timezone.utc))
         )
 
-    async def update_password(self, user_id: str, hashed_password: str) -> None:
-        """Update user's password."""
-        await self.db.execute(
-            update(User)
-            .where(User.id == user_id)
-            .values(
-                hashed_password=hashed_password,
-                updated_at=datetime.now(timezone.utc)
-            )
-        )
-
     async def get_all(self, skip: int = 0, limit: int = 100) -> list[User]:
         """Get all users (system admin only)."""
         result = await self.db.execute(
@@ -217,7 +97,7 @@ class UserRepository(IUserRepository):
         await self.db.flush()
 
 
-class RefreshTokenRepository(IRefreshTokenRepository):
+class RefreshTokenRepository:
     """Refresh token repository implementation."""
 
     db: AsyncSession
