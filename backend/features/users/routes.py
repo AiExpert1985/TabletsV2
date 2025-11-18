@@ -2,18 +2,18 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from features.auth.schemas import (
+from features.users.schemas import (
     UserCreateRequest,
     UserUpdateRequest,
     UserResponse,
 )
-from features.auth.user_service import UserService
-from features.auth.dependencies import (
-    CurrentUser,
+from features.users.service import UserService
+from features.users.dependencies import (
     get_user_service,
     require_system_admin,
     build_user_response,
 )
+from features.auth.dependencies import CurrentUser
 from core.database import get_db
 from core.exceptions import (
     PhoneAlreadyExistsException,

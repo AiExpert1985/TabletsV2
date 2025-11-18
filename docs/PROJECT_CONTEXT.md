@@ -432,6 +432,26 @@ When starting a new feature or fixing a bug:
 - **Pattern:** Every feature MUST have a `dependencies.py` file - routes only import, never define
 - **Documentation:** Added "Dependencies Organization" to PROJECT_CONTEXT.md "What to Preserve" section
 
+### Session: Split Auth and Users Features (2025-11-18)
+- **Problem:** `features/auth/` mixed two distinct responsibilities: authentication (login, tokens) and user management (CRUD)
+- **Rationale:** Separate features for separate UI screens; aligns architecture with product requirements
+- **Solution:** Created `features/users/` for user management operations
+- **Structure:**
+  - **auth/** - Authentication only (login, logout, tokens, /auth/me)
+    - Owns: User/RefreshToken models, UserRepository, AuthService
+    - Routes: /auth/login, /auth/refresh, /auth/logout, /auth/me
+  - **users/** - User management (CRUD for system admin)
+    - Imports from auth (models, repository)
+    - Routes: /users (GET, POST, PUT, DELETE)
+    - service.py, routes.py, dependencies.py, schemas.py
+- **Moved files:**
+  - auth/user_service.py → users/service.py
+  - auth/user_routes.py → users/routes.py
+  - User CRUD schemas → users/schemas.py
+  - get_user_service, require_system_admin, build_user_response → users/dependencies.py
+- **Dependency:** users → auth (one-way, clean)
+- **Pattern:** One feature per business capability, one feature per UI screen
+
 ---
 
 **Last Updated:** 2025-11-18

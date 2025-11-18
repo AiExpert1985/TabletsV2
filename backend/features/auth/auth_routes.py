@@ -13,9 +13,9 @@ from features.auth.auth_services import AuthService
 from features.auth.dependencies import (
     get_auth_service,
     CurrentUser,
-    build_user_response,
     handle_auth_exception,
 )
+from features.users.dependencies import build_user_response
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 

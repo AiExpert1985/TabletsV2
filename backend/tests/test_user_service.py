@@ -1,7 +1,7 @@
 """Tests for UserService - user management business logic."""
 import pytest
 from unittest.mock import AsyncMock, Mock
-from features.auth.user_service import UserService
+from features.users.service import UserService
 from features.auth.models import User, UserRole
 from core.exceptions import PhoneAlreadyExistsException, UserNotFoundException
 

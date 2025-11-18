@@ -8,7 +8,7 @@ from core.database import init_db
 from core.config import get_settings
 from core.exceptions import AppException
 from features.auth.auth_routes import router as auth_router
-from features.auth.user_routes import router as user_router
+from features.users.routes import router as user_router
 from features.company.routes import router as company_router
 from features.product.routes import router as product_router
 from features.logging.logger import setup_logging, get_logger
