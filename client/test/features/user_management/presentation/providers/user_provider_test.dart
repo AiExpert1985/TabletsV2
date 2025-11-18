@@ -131,7 +131,7 @@ void main() {
 
     group('createUser', () {
       test('emits loading then created state on success', () async {
-        when(mockRepository.createUser(any))
+        when(mockRepository.createUser(argThat(anything)))
             .thenAnswer((_) async => testUser1);
 
         final states = <UserState>[];
@@ -151,7 +151,7 @@ void main() {
       });
 
       test('emits error state on conflict', () async {
-        when(mockRepository.createUser(any))
+        when(mockRepository.createUser(argThat(anything)))
             .thenThrow(HttpException(message: 'Phone number already exists'));
 
         final states = <UserState>[];
@@ -168,7 +168,7 @@ void main() {
       });
 
       test('creates user with optional fields', () async {
-        when(mockRepository.createUser(any))
+        when(mockRepository.createUser(argThat(anything)))
             .thenAnswer((_) async => testUser1);
 
         await notifier.createUser(
@@ -180,13 +180,13 @@ void main() {
           isActive: false,
         );
 
-        verify(mockRepository.createUser(any)).called(1);
+        verify(mockRepository.createUser(argThat(anything))).called(1);
       });
     });
 
     group('updateUser', () {
       test('emits loading then updated state on success', () async {
-        when(mockRepository.updateUser(any, any))
+        when(mockRepository.updateUser(argThat(anything), argThat(anything)))
             .thenAnswer((_) async => testUser1);
 
         final states = <UserState>[];
@@ -214,7 +214,7 @@ void main() {
       });
 
       test('emits error state on failure', () async {
-        when(mockRepository.updateUser(any, any))
+        when(mockRepository.updateUser(argThat(anything), argThat(anything)))
             .thenThrow(HttpException(message: 'User not found'));
 
         final states = <UserState>[];
