@@ -3,10 +3,9 @@ import 'package:client/core/network/http_exception.dart';
 import 'package:client/features/auth/domain/entities/user.dart';
 import 'package:client/features/auth/presentation/providers/auth_provider.dart';
 import 'package:client/features/user_management/data/datasources/user_remote_datasource.dart';
-import 'package:client/features/user_management/data/models/user_create_dto.dart';
-import 'package:client/features/user_management/data/models/user_update_dto.dart';
 import 'package:client/features/user_management/data/repositories/user_repository_impl.dart';
 import 'package:client/features/user_management/domain/repositories/user_repository.dart';
+import 'package:client/features/user_management/domain/services/user_service.dart';
 import 'package:client/features/user_management/presentation/providers/user_state.dart';
 
 /// User repository provider
@@ -18,20 +17,26 @@ final userRepositoryProvider = Provider<UserRepository>((ref) {
   );
 });
 
+/// User service provider
+final userServiceProvider = Provider<UserService>((ref) {
+  final repository = ref.watch(userRepositoryProvider);
+  return UserService(repository);
+});
+
 /// User management notifier - manages user CRUD operations
 class UserNotifier extends StateNotifier<UserState> {
-  final UserRepository userRepository;
+  final UserService userService;
 
-  UserNotifier(this.userRepository) : super(UserInitial());
+  UserNotifier(this.userService) : super(UserInitial());
 
   /// Get all users (system admin only)
   Future<void> getUsers({int skip = 0, int limit = 100}) async {
     state = UserLoading();
     try {
-      final users = await userRepository.getUsers(skip: skip, limit: limit);
+      final users = await userService.getUsers(skip: skip, limit: limit);
       state = UsersLoaded(users);
     } on HttpException catch (e) {
-      state = UserError(e.message);
+      state = UserError(userService.mapErrorMessage(e));
     } catch (e) {
       state = UserError('Failed to load users: ${e.toString()}');
     }
@@ -41,10 +46,10 @@ class UserNotifier extends StateNotifier<UserState> {
   Future<void> getUserById(String id) async {
     state = UserLoading();
     try {
-      final user = await userRepository.getUserById(id);
+      final user = await userService.getUserById(id);
       state = UserLoaded(user);
     } on HttpException catch (e) {
-      state = UserError(e.message);
+      state = UserError(userService.mapErrorMessage(e));
     } catch (e) {
       state = UserError('Failed to load user: ${e.toString()}');
     }
@@ -61,7 +66,7 @@ class UserNotifier extends StateNotifier<UserState> {
   }) async {
     state = UserLoading();
     try {
-      final dto = UserCreateDto(
+      final user = await userService.createUser(
         phoneNumber: phoneNumber,
         password: password,
         email: email,
@@ -69,11 +74,9 @@ class UserNotifier extends StateNotifier<UserState> {
         role: role,
         isActive: isActive,
       );
-
-      final user = await userRepository.createUser(dto);
       state = UserCreated(user);
     } on HttpException catch (e) {
-      state = UserError(e.message);
+      state = UserError(userService.mapErrorMessage(e));
     } catch (e) {
       state = UserError('Failed to create user: ${e.toString()}');
     }
@@ -91,7 +94,8 @@ class UserNotifier extends StateNotifier<UserState> {
   }) async {
     state = UserLoading();
     try {
-      final dto = UserUpdateDto(
+      final user = await userService.updateUser(
+        id: id,
         phoneNumber: phoneNumber,
         email: email,
         password: password,
@@ -99,16 +103,9 @@ class UserNotifier extends StateNotifier<UserState> {
         role: role,
         isActive: isActive,
       );
-
-      if (dto.isEmpty) {
-        state = UserError('No fields to update');
-        return;
-      }
-
-      final user = await userRepository.updateUser(id, dto);
       state = UserUpdated(user);
     } on HttpException catch (e) {
-      state = UserError(e.message);
+      state = UserError(userService.mapErrorMessage(e));
     } catch (e) {
       state = UserError('Failed to update user: ${e.toString()}');
     }
@@ -118,10 +115,10 @@ class UserNotifier extends StateNotifier<UserState> {
   Future<void> deleteUser(String id) async {
     state = UserLoading();
     try {
-      await userRepository.deleteUser(id);
+      await userService.deleteUser(id);
       state = UserDeleted();
     } on HttpException catch (e) {
-      state = UserError(e.message);
+      state = UserError(userService.mapErrorMessage(e));
     } catch (e) {
       state = UserError('Failed to delete user: ${e.toString()}');
     }
@@ -142,12 +139,12 @@ class UserNotifier extends StateNotifier<UserState> {
 
 /// User management provider
 final userProvider = StateNotifierProvider<UserNotifier, UserState>((ref) {
-  final repository = ref.watch(userRepositoryProvider);
-  return UserNotifier(repository);
+  final service = ref.watch(userServiceProvider);
+  return UserNotifier(service);
 });
 
 /// Users list provider (FutureProvider for simple read-only access)
 final usersListProvider = FutureProvider<List<User>>((ref) async {
-  final repository = ref.watch(userRepositoryProvider);
-  return await repository.getUsers();
+  final service = ref.watch(userServiceProvider);
+  return await service.getUsers();
 });
