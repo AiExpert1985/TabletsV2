@@ -7,6 +7,7 @@ from features.auth.schemas import (
     RefreshTokenRequest,
     TokenResponse,
     MessageResponse,
+    UserResponse,
 )
 from features.auth.auth_services import AuthService
 from features.auth.dependencies import (
