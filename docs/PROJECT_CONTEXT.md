@@ -1,62 +1,171 @@
 # Project Context - TabletsV2 ERP
 
-> **📖 AI Assistant Onboarding Guide**
+> **📖 AI Assistant Onboarding**
 >
-> This file, along with `AI_GUIDELINES.md`, contains **everything** an AI assistant needs to know about this project. Read both files at the start of each session to understand:
-> - **AI_GUIDELINES.md** - *How* to work (tone, code style, problem-solving approach)
-> - **PROJECT_CONTEXT.md** (this file) - *What* exists and *why* (architecture, decisions, patterns, trade-offs)
->
-> These two files are the single source of truth. No other documentation files are needed for AI onboarding.
-
-## Overview
-Multi-tenant ERP system with FastAPI backend and Flutter client, following Clean Architecture principles with emphasis on simplicity and pragmatism.
+> Read this file + `AI_GUIDELINES.md` at the start of each session:
+> - **AI_GUIDELINES.md** - *How* to work (code style, tone, problem-solving)
+> - **PROJECT_CONTEXT.md** (this file) - *What* exists and *why* (architecture, patterns, decisions)
 
 ---
 
-## Architecture Decisions
+## Overview
 
-### 1. Simplified Clean Architecture (3-Layer)
-**Decision:** 3 layers instead of 4 (Presentation → Domain → Data)
-**Rationale:** Services act as use cases; avoids over-engineering
-**Trade-off:** Combined service/use-case layer for faster iteration while maintaining clean separation
+**Multi-tenant ERP system** - FastAPI backend + Flutter client, following pragmatic clean architecture.
 
-**Backend:** `routes/ → services/ → repository/ → database`
-**Client:** `screens/ → providers/ → services/ → repository/ → API`
+**Tech Stack:**
+- **Backend:** FastAPI 0.115 + SQLAlchemy 2.0 (async) + SQLite/PostgreSQL
+- **Client:** Flutter 3.x + Riverpod + Dio
+- **Security:** Phone-first auth (+964), bcrypt, JWT, single refresh token per user
+- **Tests:** 114 backend tests, 95+ client tests (100% pass rate)
 
-### 2. Multi-Tenancy Strategy
-**Implementation:** Single database with `company_id` filtering at application level
-**System admin:** `company_id = NULL` (sees all companies)
-**Company users:** Automatic filtering by their `company_id`
-**How:** CompanyContext dependency injection + BaseRepository pattern
+---
 
-### 3. Repository Pattern (Concrete Classes Only)
-**Decision:** No abstractions (ABC/Protocol) for repositories - use concrete classes directly
-**Rationale:**
-- YAGNI - Won't implement multiple repository backends
-- Python's duck typing handles mocking without interfaces
-- Reduces maintenance overhead (no interface/implementation sync)
-- Consistent with service layer (no abstractions there either)
-**Previous:** Used ABC (Abstract Base Classes), removed for pragmatism
+## Core Architecture (CRITICAL!)
 
-### 4. Service Layer Design
-**Decision:** Explicit service layer between providers and repositories
-**Rationale:**
-- Separates business logic from state management
-- Easier to test (no state mocking)
-- Mirrors backend architecture (consistency)
+### 1. Service Layer Pattern (MOST IMPORTANT)
+**3-layer separation:** `routes/scripts → services → repositories → database`
 
-### 5. Type Safety Philosophy
-**Backend:** Comprehensive type hints with Python 3.11+ syntax
-**Client:** Sealed classes for state (AuthState, etc.) instead of enums
-**Rationale:** Impossible states become impossible; compiler catches errors
+**Rules:**
+- ✅ `await user_service.create_user(...)` - ALL business logic through services
+- ❌ `User(...); repo.db.add()` - NEVER bypass service layer
+- Routes are thin controllers - delegate everything to services
+- Services = pure business logic (no DB, no state)
+
+### 2. Feature Organization
+**Pattern:** One feature per business capability, one feature per UI screen
+
+**Structure:**
+```
+features/{feature_name}/
+  ├── models.py          # Database models (if feature owns data)
+  ├── repository.py      # Data access (concrete classes, no ABC)
+  ├── service.py         # Business logic
+  ├── routes.py          # HTTP endpoints
+  ├── dependencies.py    # FastAPI dependencies (REQUIRED)
+  ├── schemas.py         # Request/response DTOs
+  └── {feature}_guide.md # Optional: detailed patterns (if needed)
+```
+
+**Current Features:**
+- `auth/` - Authentication (login, tokens, /auth/me) - **owns User model**
+- `users/` - User management CRUD (imports from auth) - system admin only
+- `company/` - Company management - system admin only
+- `product/` - Product CRUD with multi-tenancy
+- `authorization/` - Permission system (36 granular permissions)
+
+**Dependency Flow:** `users → auth` (one-way, clean)
+
+### 3. Dependencies Organization
+**Every feature MUST have `dependencies.py`** containing:
+- Service factories (`get_*_service`)
+- Auth checks (`require_system_admin`)
+- Response builders (`build_user_response`)
+- Error handlers (`handle_*_exception`)
+
+❌ **NEVER** define these in route files - always import from `dependencies.py`
+
+### 4. Multi-Tenancy Isolation
+**Implementation:** Single database + `company_id` filtering
+
+**Rules:**
+- System admin: `company_id = NULL` (sees all)
+- Company users: Automatic filtering by `company_id`
+- Use `CompanyContext` dependency injection
+- Use `BaseRepository` for company-scoped entities
+- **NEVER** bypass CompanyContext filtering
+
+### 5. Type Safety & Patterns
+**Backend:**
+- Python 3.11+ type hints (required)
+- Concrete repository classes (no ABC - duck typing for mocking)
+- No abstractions for services or repositories (YAGNI)
+
+**Client:**
+- Sealed classes for state (not enums - they can't carry data)
+- Flow: `Screen → Provider → Service → Repository → API`
+
+---
+
+## Security & Authentication
+
+**Critical Rules:**
+- ✅ Phone-first auth (+964 Iraqi numbers)
+- ✅ Bcrypt cost 12 (never lower!)
+- ✅ Single refresh token per user (logout others on login)
+- ✅ No public signup - admin CLI only (`scripts/db/create_admin.py`)
+- ✅ Phone numbers = unique identifiers
+
+**Permissions:**
+- System roles: `system_admin`, `company_admin`, `user`
+- Company roles: admin, accountant, sales_manager, warehouse_keeper, salesperson, viewer
+- Type-safe `PermissionGroups` class (prevents typos)
+
+---
+
+## Testing Strategy
+
+**Philosophy:** 70% effective coverage, not 100% actual coverage
+
+**Focus Areas:**
+1. Service layer (business logic) - HIGHEST priority
+2. Repositories (data access)
+3. Security (auth, permissions)
+4. Validators & models
+
+**Skip:** Framework internals, UI widgets (use integration tests)
+
+**Tools:** pytest + pytest-asyncio (backend), mockito (client)
+
+> **Running Tests:** See `README.md`
+
+---
+
+## Database Strategy
+
+**Development:** SQLite (aiosqlite) - zero setup, fast iteration
+**Production:** PostgreSQL (asyncpg) - robust, scalable
+**UUID Handling:** Custom GUID TypeDecorator (consistent format across DBs)
+
+**Seed Data:**
+- `scripts/db/seed_data.py` - Sample companies, users, products
+- Committed to git (not templates)
+- Credentials documented in README.md
+
+> **DB Commands:** See `README.md`
+
+---
+
+## Known Trade-offs & Issues
+
+### 1. Simplified Architecture
+- **Decision:** Combined service/use-case layer (3 layers instead of 4)
+- **Why:** Project small enough; faster iteration
+- **Trade-off:** Less theoretical purity, more pragmatism
+
+### 2. No Repository Abstractions
+- **Decision:** Concrete classes only (removed ABC)
+- **Why:** YAGNI - won't swap repository backends; Python duck typing handles mocking
+- **Trade-off:** Less "textbook" but simpler maintenance
+
+### 3. Rate Limiting (In-Memory)
+- **Status:** In-memory (5 attempts/phone/hour)
+- **Limitation:** Doesn't persist, won't work with multiple instances
+- **Production:** Needs Redis
+
+### 4. Phone Validation Disabled
+- **Status:** Removed during development
+- **Impact:** Server accepts any phone format
+- **Production:** Add `libphonenumber` validation
+
+### 5. UUID Format (SOLVED)
+- **Problem:** SQLite stored UUIDs without hyphens → 401 errors
+- **Solution:** GUID TypeDecorator (hyphens in both SQLite/PostgreSQL)
 
 ---
 
 ## Flutter Client Patterns
 
-### State Management: Sealed Classes (Not Enums)
-**Critical:** Always use sealed classes for state, never enums.
-
+### State Management - Sealed Classes (NOT Enums!)
 ```dart
 // ✅ CORRECT
 sealed class AuthState {}
@@ -70,387 +179,88 @@ class AuthStateAuthenticated extends AuthState {
 enum AuthStatus { loading, authenticated }
 ```
 
-**Why:** Compiler enforces exhaustive pattern matching, each state carries its own data, impossible states become impossible.
+**Why:** Compiler enforces exhaustive matching, states carry data
 
-### Riverpod Pattern
-- **Flow:** `Screen → Provider → Service → Repository → API` (never skip layers)
-- **Services:** Business logic only (phone normalization, validation)
-- **Repositories:** Data access (API calls, storage)
-- **Providers:** State management (StateNotifier with sealed class states)
+### Riverpod Flow
+`Screen → Provider → Service → Repository → API` (never skip layers)
 
-### Error Handling
-- Map technical errors to user-friendly messages in providers
-- Exception hierarchy: `NetworkException`, `UnauthorizedException`, `ValidationException`
-- Never expose technical error messages to users
-
-### Models vs Entities
-- **Pattern:** `UserModel extends User` (inheritance when API matches domain)
-- **Why:** Pragmatic - avoids mapping boilerplate when structures align
-- **When to separate:** If API and domain diverge significantly
-
-### UI & Localization
-- **Multi-language ready:** Design for English/Arabic (RTL/LTR) from start
-- Use `EdgeInsets.symmetric` instead of left/right
-- Use `Directionality.of(context)` for text direction
+### Multi-Language Ready
+- Design for English/Arabic (RTL/LTR)
+- Use `EdgeInsets.symmetric` (not left/right)
+- Use `Directionality.of(context)`
 
 ---
 
-## Feature Status
+## Documentation Strategy
 
-### ✅ Completed
-- **Auth:** Phone-first (+964 Iraqi numbers), bcrypt (cost 12), single refresh token per user
-- **Multi-tenancy:** Company isolation via CompanyContext
-- **Permissions:** 36 granular permissions + role-based aggregation (PermissionGroups class)
-- **Products:** Basic CRUD operations
-- **Testing:** 95+ client unit tests, 86+ backend tests (100% pass rate)
-- **Database:** SQLite (dev) + PostgreSQL (prod) with GUID TypeDecorator for UUID consistency
+**3-File Structure:**
+1. **README.md** - Operational (setup, scripts, running tests)
+2. **PROJECT_CONTEXT.md** - Architectural (patterns, decisions, why)
+3. **AI_GUIDELINES.md** - Working style (tone, code standards)
 
-### ❌ Deferred to Phase 2
-- **Password Reset:** Removed insecure endpoints (was returning reset token in API response)
-- **Rate Limiting:** In-memory (5 attempts/phone/hour) - needs Redis for production
-- **Phone Validation:** Removed during development (server accepts any format)
+**Rules for AI Assistants:**
+- ❌ Don't create new top-level docs
+- ❌ Don't duplicate information
+- ✅ Update existing docs
+- ✅ Ask before creating feature-specific guides
 
----
+**Exception:** Feature guides allowed if:
+- Co-located with feature
+- Detailed implementation patterns
+- Too detailed for PROJECT_CONTEXT.md
 
-## Critical Patterns & Conventions
-
-### Authentication
-- **Phone-first:** Iraqi phone numbers (+964) as primary identifier
-- **Security:** Bcrypt (cost 12) + HMAC-SHA256 token hashing
-- **Token strategy:** Single refresh token (logout other devices on new login)
-- **No public signup:** Admin creation via CLI only (`scripts/admin/create_system_admin.py`)
-
-### Permission System
-- **Structure:** System roles (`system_admin`, `company_admin`, `user`) + company roles
-- **Company roles:** admin, accountant, sales_manager, warehouse_keeper, salesperson, viewer
-- **Innovation:** Type-safe `PermissionGroups` class instead of strings (prevents typos)
+**Examples:** `PERMISSIONS_GUIDE.md`, `COMPANY_ISOLATION_GUIDE.md`
 
 ---
 
-## Testing Strategy (80/20 Rule)
+## AI Assistant Handoff
 
-**Philosophy:** 70% effective coverage, not 100% actual coverage
-**Focus:** Service layer > Repositories > Security > Endpoints
+**Starting a new task:**
+1. Read PROJECT_CONTEXT.md + AI_GUIDELINES.md
+2. Check "Current Features" - don't re-implement
+3. Follow existing patterns
+4. Preserve security & multi-tenancy
+5. Test strategically (70% effective coverage)
+6. Update docs with new architectural decisions
 
-### Client Tests (95+ tests)
-- ✅ Validators (phone, password) - 25+ tests
-- ✅ JSON Models (serialization, roundtrip) - 35+ tests
-- ✅ Auth Service (business logic, error handling) - 15+ tests
-- ✅ Token Storage (persistence, security) - 20+ tests
-- ⏭️ Skipped: Widgets, Providers (use integration tests)
-
-### Backend Tests (86+ tests)
-- ✅ Service layer (business logic)
-- ✅ Repositories (data access)
-- ✅ Security (auth, permissions)
-- ✅ API endpoints
-- **Tool:** pytest + async support, SQLite test DB with transaction rollback
-
-**Key Insight:** Test critical business logic units, not framework internals or UI complexity.
-
-> **🧪 Running Tests**
-> For test commands, see [`README.md`](../README.md).
-
----
-
-## Known Issues & Trade-offs
-
-### 1. Phone Validation Removed
-**Status:** Disabled during development
-**Impact:** Server accepts any phone format
-**Solution:** Add `libphonenumber` validation in production
-
-### 2. UUID Format Inconsistency (Solved)
-**Problem:** SQLite stored UUIDs without hyphens → 401 errors
-**Solution:** Custom GUID TypeDecorator (SQLite: CHAR(36) with hyphens, PostgreSQL: native UUID)
-
-### 3. Password Reset Deferred
-**Problem:** Original plan returned reset token in API response (security hole)
-**Solution:** Deferred to Phase 2; created abstraction (email/SMS interfaces)
-
-### 4. Rate Limiting (In-Memory)
-**Current:** In-memory rate limiter (5 attempts/phone/hour)
-**Limitation:** Doesn't persist across restarts; won't work in multi-instance deployments
-**Production:** Needs Redis
-
-### 5. Service = Use Case Layer
-**Decision:** Combined service and use case layers
-**Trade-off:** Faster iteration vs theoretical purity
-**Rationale:** Project is small enough that separation isn't needed yet
-
----
-
-## Database Strategy
-
-### Development vs Production
-- **Development:** SQLite with async support (`aiosqlite`) - Zero setup, fast iteration
-- **Production:** PostgreSQL with async support (`asyncpg`) - Robust, scalable
-- **UUID handling:** Custom GUID TypeDecorator ensures consistent format across both databases
-
-### Why SQLite for Development?
-**Decision:** SQLite for dev, PostgreSQL for production
-**Rationale:** Eliminates setup friction, allows instant database reset
-**Trade-off:** Ensures compatibility layer works correctly (TypeDecorator pattern)
-
-> **🛠️ Database Setup & Scripts**
-> For database initialization, reset scripts, and seed data, see [`README.md`](../README.md).
-
----
-
-## Development Philosophy
-
-### Learning Strategy (For 40-year-old Developer with Limited Time)
-- **70%** - Code you're modifying
-- **20%** - Architecture/patterns
-- **10%** - Everything else
-- **Tests:** Use as safety net, not documentation (read only when they fail)
-- **Focus:** Learn flows, not lines; patterns, not implementation details
-
-### Code Quality Principles
-- **Pragmatic over perfect:** Working solutions first
-- **Junior-readable:** Clear variable names, obvious data flow
-- **Fail fast:** Explicit errors, no silent catches
-- **Testable by design:** Write code ready for testing
-- **Standard patterns only:** Repository, Adapter, Strategy, Factory
-
----
-
-## Technology Stack
-
-### Backend
-- **Framework:** FastAPI 0.115.0 + Uvicorn (async Python web framework)
-- **Database:** SQLAlchemy 2.0 (async) + asyncpg/aiosqlite
-- **Security:** PyJWT (tokens), bcrypt (password hashing)
-- **Testing:** pytest + pytest-asyncio (NOT pytest-anyio - they conflict)
-- **Config:** Dependencies in `pyproject.toml` (not `requirements.txt`)
-
-### Client
-- **Framework:** Flutter 3.x (cross-platform mobile)
-- **State:** Riverpod (reactive state management)
-- **HTTP:** Dio with interceptors (auth, logging)
-- **Storage:** flutter_secure_storage (encrypted token persistence)
-- **Testing:** mockito + build_runner (mocking framework)
-
-> **🔧 Scripts & Installation**
-> For setup scripts, dependencies installation, and utilities, see [`README.md`](../README.md).
-
----
-
-## What to Preserve (Critical!)
-
-### 1. Service Layer Architecture (MOST CRITICAL)
-- **3-layer separation:** `routes/scripts → services → repositories → database`
-- **NEVER bypass services:** ALL business operations MUST go through service layer
-- **Pattern:** `await user_service.create_user(...)` ✅ NOT `User(...); repo.db.add()` ❌
-- Routes and scripts are thin controllers - delegate to services
-- Repository interfaces must be complete (declare ALL methods services use)
-- Services = business logic only (no state management, no direct DB access)
-
-### 2. Dependencies Organization (CRITICAL)
-- **Every feature MUST have a `dependencies.py` file** for FastAPI dependencies
-- **NEVER define dependencies in route files** - always move them to `dependencies.py`
-- **Pattern:** Routes import from `dependencies.py`, never define `get_*_service()` locally
-- **Example structure:**
-  ```
-  features/auth/
-    ├── dependencies.py    # ✅ get_auth_service, get_user_service, build_user_response, etc.
-    ├── auth_routes.py     # ✅ Imports from dependencies.py
-    └── user_routes.py     # ✅ Imports from dependencies.py
-  features/company/
-    ├── dependencies.py    # ✅ get_company_service
-    └── routes.py          # ✅ Imports from dependencies.py
-  features/product/
-    ├── dependencies.py    # ✅ get_product_service
-    └── routes.py          # ✅ Imports from dependencies.py
-  ```
-- **What goes in `dependencies.py`:**
-  - Service factory functions (`get_*_service`)
-  - Authorization/permission checks (`require_system_admin`, etc.)
-  - Response builders (`build_user_response`, etc.)
-  - Error handlers (`handle_*_exception`)
-  - Any reusable dependency used across multiple routes
-
-### 3. Multi-Tenancy Isolation
-- Never bypass `CompanyContext` filtering
-- System admin: `company_id = NULL` (must handle explicitly)
-- Always use `BaseRepository` for company-scoped entities
-- **CompanyContext pattern:** `CompanyContext(user=user)` - `should_filter` is auto-calculated
-
-### 4. Security
-- No public signup - admin creation CLI-only (`scripts/db/create_admin.py`)
-- Single refresh token per user (logout other devices on new login)
-- Phone numbers are unique identifiers (not usernames)
-- Bcrypt rounds = 12 (never lower for "performance")
-
-### 5. Type Safety
-- Backend: Always use type hints (Python 3.11+ syntax)
-- Client: Always use sealed classes for state (not enums)
-- Never use `dynamic` or `Any` unless absolutely necessary
-- Use `TYPE_CHECKING` for circular import prevention
-
-### 6. Testing
-- 70% effective coverage, not 100% actual coverage
-- Focus: Service layer > Repositories > Security > Endpoints
-- Skip framework internals and UI widgets (use integration tests)
-
----
-
-## AI Assistant Handoff Instructions
-
-When starting a new feature or fixing a bug:
-
-1. **Read this file first** - Understand architectural decisions and trade-offs
-2. **Check Feature Status** - Don't re-implement deferred features
-3. **Follow existing patterns** - Repository for data, Service for logic, sealed classes for state
-4. **Preserve security** - Multi-tenancy isolation, no public signup, type safety
-5. **Test strategically** - 70% effective coverage (services, validators, models)
-6. **Update this file** - Add new architectural decisions or pattern changes at end of session
-
-### When in Doubt
+**When in doubt:**
 - ✅ Prefer simplicity over cleverness
-- ✅ Follow existing conventions (check similar features)
-- ✅ Ask user before major architectural changes
+- ✅ Follow existing conventions
+- ✅ Ask before major architectural changes
 - ❌ Don't refactor working code "to make it better"
-- ❌ Don't add dependencies without justification
 
 ---
 
-## Documentation Strategy for AI Assistants
+## Change Log (Key Decisions)
 
-**Goal:** Minimize documentation sprawl - use the 3-file structure defined in AI_GUIDELINES.md.
+### 2025-11-18: Auth/Users Feature Split
+- **Change:** Split `features/auth/` into `auth/` (authentication) + `users/` (user management)
+- **Why:** Align with UI (separate screens), clear responsibilities
+- **Pattern:** One feature per business capability
 
-### Where to Put Information
+### 2025-11-18: Dependencies Organization
+- **Change:** Centralized all dependencies into `{feature}/dependencies.py`
+- **Why:** Routes should be thin, dependencies reusable
+- **Rule:** Every feature MUST have dependencies.py
 
-**When you need to document something, use this decision tree:**
+### 2025-11-18: Repository Abstractions Removed
+- **Change:** Removed IUserRepository, IRefreshTokenRepository, ICompanyRepository (ABC)
+- **Why:** YAGNI + Python duck typing handles mocking
+- **Impact:** Simpler, less maintenance overhead
 
-1. **Operational/How-to-run info?** → **README.md**
-   - Installation steps, setup commands, running tests
-   - Scripts reference, API endpoints
-   - Troubleshooting common issues
-   - Example: Database setup commands, seed data credentials
+### 2025-11-18: Service Layer Enforcement
+- **Change:** Created UserService, ProductService, CompanyService
+- **Why:** Routes/scripts were bypassing service layer
+- **Rule:** ALL business logic through services (never User(...); repo.db.add())
 
-2. **Architectural/Why decisions?** → **docs/PROJECT_CONTEXT.md**
-   - Design patterns and rationale
-   - Feature status (completed vs deferred)
-   - Architectural trade-offs
-   - Multi-tenancy design, testing philosophy
-   - Example: Why we use ABC instead of Protocol for repositories
+### 2025-11-17: Type Safety & Scripts
+- **Change:** Python 3.11+ type hints, consolidated scripts to `scripts/db/`
+- **Why:** Type safety + better organization
 
-3. **Working style/Code standards?** → **docs/AI_GUIDELINES.md**
-   - Code quality standards
-   - Abstraction guidelines
-   - Communication tone
-   - Example: When to abstract, function length limits
-
-4. **Implementation-level reference for specific feature?** → **Co-located guide** (ONLY if absolutely necessary)
-   - Detailed usage patterns and code examples
-   - Co-locate with the feature (e.g., `features/authorization/PERMISSIONS_GUIDE.md`)
-   - Must provide significant value beyond code comments
-   - Example: PERMISSIONS_GUIDE.md (type-safe permission patterns), COMPANY_ISOLATION_GUIDE.md (multi-tenancy patterns)
-
-### Rules for AI Assistants
-
-**❌ NEVER create:**
-- New top-level documentation files
-- Nested README files in subdirectories (except when truly needed for complex features)
-- Duplicate information across multiple files
-
-**✅ ALWAYS:**
-- Check if information already exists in the 3 main docs
-- Update existing documentation instead of creating new files
-- Merge architectural insights into PROJECT_CONTEXT.md
-- Merge operational info into main README.md
-- Ask user before creating feature-specific guides
-
-**Exception:** Feature-specific implementation guides (like PERMISSIONS_GUIDE.md or COMPANY_ISOLATION_GUIDE.md) are acceptable ONLY when:
-- They provide detailed implementation patterns and code examples
-- Information is too detailed for PROJECT_CONTEXT.md (would clutter it)
-- They're co-located with the feature they document
-- They serve as reference for developers working on that specific area
-
----
-
-## Recent Changes & Sessions
-
-### Session: Initial Setup
-- Created 3-layer clean architecture (routes → services → repositories)
-- Implemented multi-tenancy with company isolation via CompanyContext
-- Set up phone-first authentication (+964 Iraqi numbers, bcrypt cost 12)
-- Established testing strategy: 95+ client tests, 86+ backend tests
-
-### Session: Project Reorganization
-- Moved docs to `docs/` folder, consolidated scripts to `scripts/db/`
-- Migrated dependencies to `pyproject.toml` (removed requirements.txt)
-- Created PROJECT_CONTEXT.md and AI_GUIDELINES.md as single source of truth
-
-### Session: Scripts & Type Safety (2025-11-17)
-- **Scripts:** Consolidated all database scripts into `scripts/db/` folder (setup_all, reset_db, create_admin, seed_data)
-- **Seed data:** Committed directly to git (no template pattern) - contains only sample data
-- **Type safety:** Fixed Python 3.11+ compatibility (`TYPE_CHECKING`, `from __future__ import annotations`, TypeVar string literals)
-- **Python version:** Minimum 3.11 (asyncpg 0.29.0 doesn't support 3.13 yet)
-
-### Session: Service Layer Enforcement (2025-11-18)
-- **Problem:** Routes/scripts bypassed services, accessed repositories directly (violated 3-layer architecture)
-- **Solution:** Created UserService, ProductService, CompanyService; refactored ALL routes/scripts to use services
-- **Pattern:** `await service.create_user(...)` ✅ NOT `User(...); repo.db.add()` ❌
-- **Cleanup:** Removed unused signup code (auth/services.py → auth_services.py, routes.py → auth_routes.py for consistency)
-- **Repository completeness:** Added missing methods to UserRepository (save, get_all, update, delete)
-- **Tests:** Added 42 service layer tests (13 user, 15 product, 14 company)
-- **Commits:** d1907c8, 99d72ab, 09f8ae2
-
-### Session: Documentation Strategy (2025-11-18)
-- **Change:** Added documentation strategy section to PROJECT_CONTEXT.md
-- **Goal:** Prevent AI assistants from creating unnecessary documentation files
-- **Decision tree:** README.md (operational), PROJECT_CONTEXT.md (architectural), AI_GUIDELINES.md (working style)
-- **Cleanup:** Deleted client/README.md (useless Flutter boilerplate)
-- **Exception:** Feature-specific guides allowed when co-located and providing detailed implementation patterns
-
-### Session: Remove Repository Abstractions (2025-11-18)
-- **Decision:** Removed all repository abstractions (IUserRepository, IRefreshTokenRepository, ICompanyRepository)
-- **Rationale:** Pragmatic architecture - YAGNI principle, Python's duck typing handles mocking, reduces maintenance
-- **Changes:**
-  - Removed ABC interfaces from auth/repository.py, company/repository.py
-  - Updated all services to use concrete repository types (UserRepository, RefreshTokenRepository, CompanyRepository)
-  - Updated auth_services.py, user_service.py, company/service.py type hints
-  - Tests continue to work - Mock() doesn't require ABC abstractions
-- **Cleanup:** Removed unused `change_password()` method from UserService and `update_password()` from UserRepository
-- **Pattern:** Consistent with service layer (no abstractions) - services and repositories are concrete classes only
-- **Documentation:** Updated PROJECT_CONTEXT.md and AI_GUIDELINES.md to reflect no-abstraction policy
-
-### Session: Dependencies Organization (2025-11-18)
-- **Problem:** Dependencies scattered across route files instead of centralized `dependencies.py` files
-- **Found scattered dependencies:**
-  - auth_routes.py: `build_user_response()`, `handle_auth_exception()` (helper functions)
-  - user_routes.py: `get_user_service()`, `require_system_admin()` (FastAPI dependencies)
-  - company/routes.py: `get_company_service()` (FastAPI dependency)
-  - product/routes.py: `get_product_service()` (FastAPI dependency)
-- **Solution:**
-  - Moved all auth dependencies to `features/auth/dependencies.py`
-  - Created `features/company/dependencies.py` with `get_company_service()`
-  - Created `features/product/dependencies.py` with `get_product_service()`
-  - Updated all route files to import from `dependencies.py` instead of defining locally
-- **Pattern:** Every feature MUST have a `dependencies.py` file - routes only import, never define
-- **Documentation:** Added "Dependencies Organization" to PROJECT_CONTEXT.md "What to Preserve" section
-
-### Session: Split Auth and Users Features (2025-11-18)
-- **Problem:** `features/auth/` mixed two distinct responsibilities: authentication (login, tokens) and user management (CRUD)
-- **Rationale:** Separate features for separate UI screens; aligns architecture with product requirements
-- **Solution:** Created `features/users/` for user management operations
-- **Structure:**
-  - **auth/** - Authentication only (login, logout, tokens, /auth/me)
-    - Owns: User/RefreshToken models, UserRepository, AuthService
-    - Routes: /auth/login, /auth/refresh, /auth/logout, /auth/me
-  - **users/** - User management (CRUD for system admin)
-    - Imports from auth (models, repository)
-    - Routes: /users (GET, POST, PUT, DELETE)
-    - service.py, routes.py, dependencies.py, schemas.py
-- **Moved files:**
-  - auth/user_service.py → users/service.py
-  - auth/user_routes.py → users/routes.py
-  - User CRUD schemas → users/schemas.py
-  - get_user_service, require_system_admin, build_user_response → users/dependencies.py
-- **Dependency:** users → auth (one-way, clean)
-- **Pattern:** One feature per business capability, one feature per UI screen
+### Initial: 3-Layer Architecture
+- **Decision:** `routes → services → repositories → database`
+- **Why:** Pragmatic clean architecture (3 layers, not 4)
+- **Trade-off:** Combined service/use-case for faster iteration
 
 ---
 
