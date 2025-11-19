@@ -121,6 +121,7 @@ class MockUserService extends _i1.Mock implements _i8.UserService {
 
   @override
   _i4.Future<_i2.User> createUser({
+    required String? name,
     required String? phoneNumber,
     required String? password,
     String? email,
@@ -130,6 +131,7 @@ class MockUserService extends _i1.Mock implements _i8.UserService {
   }) =>
       (super.noSuchMethod(
             Invocation.method(#createUser, [], {
+              #name: name,
               #phoneNumber: phoneNumber,
               #password: password,
               #email: email,
@@ -146,6 +148,7 @@ class MockUserService extends _i1.Mock implements _i8.UserService {
   @override
   _i4.Future<_i2.User> updateUser({
     required String? id,
+    String? name,
     String? phoneNumber,
     String? email,
     String? password,
@@ -156,6 +159,7 @@ class MockUserService extends _i1.Mock implements _i8.UserService {
       (super.noSuchMethod(
             Invocation.method(#updateUser, [], {
               #id: id,
+              #name: name,
               #phoneNumber: phoneNumber,
               #email: email,
               #password: password,
