@@ -1,13 +1,52 @@
 """Audit trail models for tracking entity changes."""
 
+import json
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import Column, DateTime, String, Text, Index
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Column, DateTime, String, Text, Index, TypeDecorator
+from sqlalchemy.dialects.postgresql import JSON as PG_JSON
 
 from core.database import Base
 from features.auth.models import UUID
+
+
+class JSON(TypeDecorator):
+    """Platform-independent JSON type.
+
+    Uses PostgreSQL's JSON type when available, otherwise uses TEXT for SQLite.
+    Stores JSON objects/dicts as strings.
+    """
+
+    impl = Text
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == "postgresql":
+            return dialect.type_descriptor(PG_JSON())
+        else:
+            return dialect.type_descriptor(Text())
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        if dialect.name == "postgresql":
+            return value  # PostgreSQL handles JSON natively
+        else:
+            # For SQLite: store as JSON string
+            return json.dumps(value)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return None
+        if dialect.name == "postgresql":
+            return value
+        else:
+            # For SQLite: parse JSON string
+            try:
+                return json.loads(value) if value else None
+            except (json.JSONDecodeError, TypeError):
+                return None
 
 
 class AuditAction:
@@ -44,9 +83,9 @@ class AuditLog(Base):
     entity_id = Column(String(36), nullable=False, index=True)  # UUID as string
 
     # Details (Changes)
-    old_values = Column(JSONB, nullable=True)  # Before state (null for CREATE)
-    new_values = Column(JSONB, nullable=True)  # After state (null for DELETE)
-    changes = Column(JSONB, nullable=True)  # Computed delta for UPDATE
+    old_values = Column(JSON(), nullable=True)  # Before state (null for CREATE)
+    new_values = Column(JSON(), nullable=True)  # After state (null for DELETE)
+    changes = Column(JSON(), nullable=True)  # Computed delta for UPDATE
 
     # Optional description
     description = Column(Text, nullable=True)

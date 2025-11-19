@@ -25,15 +25,15 @@ router = APIRouter(prefix="/audit-logs", tags=["audit"])
 async def get_audit_logs(
     current_user: CurrentUser,
     service: Annotated[AuditService, Depends(get_audit_service)],
-    company_id: Annotated[Optional[UUID], Query(None)] = None,
-    entity_type: Annotated[Optional[str], Query(None)] = None,
-    entity_id: Annotated[Optional[str], Query(None)] = None,
-    user_id: Annotated[Optional[UUID], Query(None)] = None,
-    action: Annotated[Optional[str], Query(None)] = None,
-    start_date: Annotated[Optional[datetime], Query(None)] = None,
-    end_date: Annotated[Optional[datetime], Query(None)] = None,
-    limit: Annotated[int, Query(100, ge=1, le=1000)] = 100,
-    offset: Annotated[int, Query(0, ge=0)] = 0,
+    company_id: Annotated[Optional[UUID], Query()] = None,
+    entity_type: Annotated[Optional[str], Query()] = None,
+    entity_id: Annotated[Optional[str], Query()] = None,
+    user_id: Annotated[Optional[UUID], Query()] = None,
+    action: Annotated[Optional[str], Query()] = None,
+    start_date: Annotated[Optional[datetime], Query()] = None,
+    end_date: Annotated[Optional[datetime], Query()] = None,
+    limit: Annotated[int, Query(ge=1, le=1000)] = 100,
+    offset: Annotated[int, Query(ge=0)] = 0,
 ) -> AuditLogListResponse:
     """
     Get audit logs with filters (for global audit screen).

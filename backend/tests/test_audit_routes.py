@@ -31,7 +31,6 @@ async def system_admin_user(db_session):
         id=uuid4(),
         phone_number="07700000001",
         hashed_password=hash_password("AdminPass123"),
-        name="System Admin",
         role=UserRole.SYSTEM_ADMIN,
         company_id=None,
         is_active=True,
@@ -49,7 +48,6 @@ async def company_admin_user(db_session, test_company):
         id=uuid4(),
         phone_number="07700000002",
         hashed_password=hash_password("CompanyAdmin123"),
-        name="Company Admin",
         role=UserRole.COMPANY_ADMIN,
         company_id=test_company.id,
         is_active=True,
@@ -67,7 +65,6 @@ async def regular_user(db_session, test_company):
         id=uuid4(),
         phone_number="07700000003",
         hashed_password=hash_password("UserPass123"),
-        name="Regular User",
         role=UserRole.SALESPERSON,
         company_id=test_company.id,
         is_active=True,
@@ -79,21 +76,39 @@ async def regular_user(db_session, test_company):
 
 
 @pytest.fixture
-def system_admin_token(system_admin_user):
+async def system_admin_token(system_admin_user):
     """Create access token for system admin."""
-    return create_access_token(system_admin_user.id)
+    return create_access_token(
+        user_id=str(system_admin_user.id),
+        phone_number=system_admin_user.phone_number,
+        is_active=system_admin_user.is_active,
+        company_id=None,
+        role=system_admin_user.role.value,
+    )
 
 
 @pytest.fixture
-def company_admin_token(company_admin_user):
+async def company_admin_token(company_admin_user):
     """Create access token for company admin."""
-    return create_access_token(company_admin_user.id)
+    return create_access_token(
+        user_id=str(company_admin_user.id),
+        phone_number=company_admin_user.phone_number,
+        is_active=company_admin_user.is_active,
+        company_id=str(company_admin_user.company_id) if company_admin_user.company_id else None,
+        role=company_admin_user.role.value,
+    )
 
 
 @pytest.fixture
-def regular_user_token(regular_user):
+async def regular_user_token(regular_user):
     """Create access token for regular user."""
-    return create_access_token(regular_user.id)
+    return create_access_token(
+        user_id=str(regular_user.id),
+        phone_number=regular_user.phone_number,
+        is_active=regular_user.is_active,
+        company_id=str(regular_user.company_id) if regular_user.company_id else None,
+        role=regular_user.role.value,
+    )
 
 
 @pytest.fixture
@@ -105,7 +120,7 @@ async def sample_audit_logs(db_session, test_company, company_admin_user):
     log1 = AuditLog(
         timestamp=datetime.utcnow() - timedelta(hours=3),
         user_id=company_admin_user.id,
-        username=company_admin_user.name,
+        username=company_admin_user.phone_number,
         user_role=company_admin_user.role,
         company_id=test_company.id,
         company_name=test_company.name,
@@ -120,7 +135,7 @@ async def sample_audit_logs(db_session, test_company, company_admin_user):
     log2 = AuditLog(
         timestamp=datetime.utcnow() - timedelta(hours=2),
         user_id=company_admin_user.id,
-        username=company_admin_user.name,
+        username=company_admin_user.phone_number,
         user_role=company_admin_user.role,
         company_id=test_company.id,
         company_name=test_company.name,
@@ -137,7 +152,7 @@ async def sample_audit_logs(db_session, test_company, company_admin_user):
     log3 = AuditLog(
         timestamp=datetime.utcnow() - timedelta(hours=1),
         user_id=company_admin_user.id,
-        username=company_admin_user.name,
+        username=company_admin_user.phone_number,
         user_role=company_admin_user.role,
         company_id=test_company.id,
         company_name=test_company.name,
