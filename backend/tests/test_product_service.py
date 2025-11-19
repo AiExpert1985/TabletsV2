@@ -26,9 +26,19 @@ def mock_product_repo():
 
 
 @pytest.fixture
-def product_service(mock_product_repo):
-    """Create ProductService with mocked repository."""
-    return ProductService(mock_product_repo)
+def mock_audit_service():
+    """Create mock audit service."""
+    service = Mock()
+    service.log_create = AsyncMock()
+    service.log_update = AsyncMock()
+    service.log_delete = AsyncMock()
+    return service
+
+
+@pytest.fixture
+def product_service(mock_product_repo, mock_audit_service):
+    """Create ProductService with mocked repository and audit service."""
+    return ProductService(mock_product_repo, mock_audit_service)
 
 
 @pytest.fixture

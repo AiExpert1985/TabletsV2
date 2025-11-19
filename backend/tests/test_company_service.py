@@ -19,9 +19,19 @@ def mock_company_repo():
 
 
 @pytest.fixture
-def company_service(mock_company_repo):
-    """Create CompanyService with mocked repository."""
-    return CompanyService(mock_company_repo)
+def mock_audit_service():
+    """Create mock audit service."""
+    service = Mock()
+    service.log_create = AsyncMock()
+    service.log_update = AsyncMock()
+    service.log_delete = AsyncMock()
+    return service
+
+
+@pytest.fixture
+def company_service(mock_company_repo, mock_audit_service):
+    """Create CompanyService with mocked repository and audit service."""
+    return CompanyService(mock_company_repo, mock_audit_service)
 
 
 class TestCompanyService:

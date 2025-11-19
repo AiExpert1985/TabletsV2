@@ -21,9 +21,19 @@ def mock_user_repo():
 
 
 @pytest.fixture
-def user_service(mock_user_repo):
-    """Create UserService with mocked repository."""
-    return UserService(mock_user_repo)
+def mock_audit_service():
+    """Create mock audit service."""
+    service = Mock()
+    service.log_create = AsyncMock()
+    service.log_update = AsyncMock()
+    service.log_delete = AsyncMock()
+    return service
+
+
+@pytest.fixture
+def user_service(mock_user_repo, mock_audit_service):
+    """Create UserService with mocked repository and audit service."""
+    return UserService(mock_user_repo, mock_audit_service)
 
 
 class TestUserService:

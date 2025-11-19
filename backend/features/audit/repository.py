@@ -47,7 +47,7 @@ class AuditLogRepository:
         if company_id is not None:
             query = query.where(AuditLog.company_id == uuid.UUID(company_id))
 
-        query = query.order_by(AuditLog.timestamp.desc()).offset(skip).limit(limit)
+        query = query.order_by(AuditLog.timestamp.desc(), AuditLog.id.desc()).offset(skip).limit(limit)
 
         result = await self.db.execute(query)
         return list(result.scalars().all())
@@ -83,7 +83,7 @@ class AuditLogRepository:
             select(AuditLog)
             .where(and_(*conditions))
             .options(selectinload(AuditLog.user))
-            .order_by(AuditLog.timestamp.desc())
+            .order_by(AuditLog.timestamp.desc(), AuditLog.id.desc())
             .offset(skip)
             .limit(limit)
         )
