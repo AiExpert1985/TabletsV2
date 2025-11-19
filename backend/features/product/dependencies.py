@@ -5,11 +5,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.dependencies import get_db
 from features.product.repository import ProductRepository
 from features.product.service import ProductService
+from features.audit_logs.service import AuditService
+from features.audit_logs.dependencies import get_audit_service
 
 
 def get_product_service(
-    db: Annotated[AsyncSession, Depends(get_db)]
+    db: Annotated[AsyncSession, Depends(get_db)],
+    audit_service: Annotated[AuditService, Depends(get_audit_service)]
 ) -> ProductService:
     """Get product service dependency."""
     product_repo = ProductRepository(db)
-    return ProductService(product_repo)
+    return ProductService(product_repo, audit_service)
