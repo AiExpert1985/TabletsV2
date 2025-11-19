@@ -1,22 +1,32 @@
 """Business logic for user management (system admin operations)."""
 import uuid
+from typing import TYPE_CHECKING
 from features.users.models import User
 from features.users.repository import UserRepository
-from core.enums import UserRole
+from core.enums import UserRole, EntityType
 from core.security import hash_password, normalize_phone_number
 from core.exceptions import (
     PhoneAlreadyExistsException,
     UserNotFoundException,
 )
 
+if TYPE_CHECKING:
+    from features.audit_logs.service import AuditService
+
 
 class UserService:
     """User management service - handles business logic for user CRUD operations."""
 
     user_repo: UserRepository
+    audit_service: "AuditService"
 
-    def __init__(self, user_repo: UserRepository) -> None:
+    def __init__(
+        self,
+        user_repo: UserRepository,
+        audit_service: "AuditService"
+    ) -> None:
         self.user_repo = user_repo
+        self.audit_service = audit_service
 
     async def create_user(
         self,
@@ -25,6 +35,7 @@ class UserService:
         password: str,
         company_id: str | None,
         role: str,
+        current_user: User,
         email: str | None = None,
         is_active: bool = True,
     ) -> User:
@@ -43,6 +54,7 @@ class UserService:
             password: Plain text password (will be hashed)
             company_id: UUID of company (None for system admin)
             role: User role (e.g., system_admin, company_admin, accountant, viewer)
+            current_user: User performing the creation (for audit logging)
             email: Optional email address
             is_active: Whether user is active (default: True)
 
@@ -85,6 +97,23 @@ class UserService:
         # 6. Save to repository
         user = await self.user_repo.save(user)
 
+        # 7. Log creation
+        await self.audit_service.log_create(
+            user=current_user,
+            entity_type=EntityType.USER,
+            entity_id=str(user.id),
+            values={
+                "id": str(user.id),
+                "name": user.name,
+                "phone_number": user.phone_number,
+                "email": user.email,
+                "company_id": str(user.company_id) if user.company_id else None,
+                "role": user.role.value,
+                "is_active": user.is_active,
+            },
+            company_id=str(user.company_id) if user.company_id else None
+        )
+
         return user
 
     async def get_user(self, user_id: str) -> User:
@@ -121,6 +150,7 @@ class UserService:
     async def update_user(
         self,
         user_id: str,
+        current_user: User,
         name: str | None = None,
         phone_number: str | None = None,
         password: str | None = None,
@@ -139,6 +169,7 @@ class UserService:
 
         Args:
             user_id: User UUID
+            current_user: User performing the update (for audit logging)
             name: New name (optional)
             phone_number: New phone number (optional)
             password: New password (optional, will be hashed)
@@ -158,15 +189,26 @@ class UserService:
         # 1. Get existing user
         user = await self.get_user(user_id)
 
-        # 2. Update name if provided
+        # 2. Capture old values for audit logging
+        old_values = {
+            "id": str(user.id),
+            "name": user.name,
+            "phone_number": user.phone_number,
+            "email": user.email,
+            "company_id": str(user.company_id) if user.company_id else None,
+            "role": user.role.value,
+            "is_active": user.is_active,
+        }
+
+        # 3. Update name if provided
         if name is not None:
             user.name = name
 
-        # 3. Update password if provided
+        # 4. Update password if provided
         if password:
             user.hashed_password = hash_password(password)
 
-        # 4. Update phone if provided
+        # 5. Update phone if provided
         if phone_number:
             normalized_phone = normalize_phone_number(phone_number)
             if normalized_phone != user.phone_number:
@@ -174,28 +216,47 @@ class UserService:
                     raise PhoneAlreadyExistsException()
                 user.phone_number = normalized_phone
 
-        # 5. Update role with validation
+        # 6. Update role with validation
         if role:
             new_role = UserRole(role)
             if new_role == UserRole.SYSTEM_ADMIN and user.company_id:
                 raise ValueError("Cannot make user with company_id a system admin")
             user.role = new_role
 
-        # 6. Update company_id
+        # 7. Update company_id
         if company_id is not None:
             user.company_id = uuid.UUID(company_id) if company_id else None
 
-        # 7. Update other fields
+        # 8. Update other fields
         if email is not None:
             user.email = email
         if is_active is not None:
             user.is_active = is_active
 
-        # 7. Save changes
+        # 9. Save changes
         updated_user = await self.user_repo.update(user)
+
+        # 10. Log update with old and new values
+        await self.audit_service.log_update(
+            user=current_user,
+            entity_type=EntityType.USER,
+            entity_id=str(updated_user.id),
+            old_values=old_values,
+            new_values={
+                "id": str(updated_user.id),
+                "name": updated_user.name,
+                "phone_number": updated_user.phone_number,
+                "email": updated_user.email,
+                "company_id": str(updated_user.company_id) if updated_user.company_id else None,
+                "role": updated_user.role.value,
+                "is_active": updated_user.is_active,
+            },
+            company_id=str(updated_user.company_id) if updated_user.company_id else None
+        )
+
         return updated_user
 
-    async def delete_user(self, user_id: str, current_user_id: str) -> None:
+    async def delete_user(self, user_id: str, current_user: User) -> None:
         """
         Delete user.
 
@@ -204,18 +265,38 @@ class UserService:
 
         Args:
             user_id: User UUID to delete
-            current_user_id: Current user's UUID (to prevent self-deletion)
+            current_user: User performing the deletion (for audit logging and self-deletion check)
 
         Raises:
             UserNotFoundException: User not found
             ValueError: Attempting to delete yourself
         """
         # 1. Prevent self-deletion
-        if user_id == current_user_id:
+        if user_id == str(current_user.id):
             raise ValueError("Cannot delete yourself")
 
         # 2. Get user
         user = await self.get_user(user_id)
 
-        # 3. Delete
+        # 3. Capture values for audit logging
+        old_values = {
+            "id": str(user.id),
+            "name": user.name,
+            "phone_number": user.phone_number,
+            "email": user.email,
+            "company_id": str(user.company_id) if user.company_id else None,
+            "role": user.role.value,
+            "is_active": user.is_active,
+        }
+
+        # 4. Delete
         await self.user_repo.delete(user)
+
+        # 5. Log deletion
+        await self.audit_service.log_delete(
+            user=current_user,
+            entity_type=EntityType.USER,
+            entity_id=str(user.id),
+            values=old_values,
+            company_id=str(user.company_id) if user.company_id else None
+        )

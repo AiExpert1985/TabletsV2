@@ -11,6 +11,7 @@ from features.auth.auth_routes import router as auth_router
 from features.users.routes import router as user_router
 from features.company.routes import router as company_router
 from features.product.routes import router as product_router
+from features.audit_logs.routes import router as audit_logs_router
 from features.logging.logger import setup_logging, get_logger
 from features.logging.middleware import LoggingMiddleware, ExceptionLoggingMiddleware
 # Import models to ensure they're registered with SQLAlchemy
@@ -18,6 +19,7 @@ from features.users.models import User  # noqa: F401
 from features.auth.models import RefreshToken  # noqa: F401
 from features.company.models import Company  # noqa: F401
 from features.product.models import Product  # noqa: F401
+from features.audit_logs.models import AuditLog  # noqa: F401
 
 # Initialize logging FIRST (before anything else)
 setup_logging()
@@ -119,6 +121,7 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(user_router, prefix="/api")
 app.include_router(company_router, prefix="/api")
 app.include_router(product_router, prefix="/api")
+app.include_router(audit_logs_router, prefix="/api")
 
 
 # Health check endpoint

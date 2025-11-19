@@ -64,6 +64,7 @@ async def get_user(
 @router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
     request: UserCreateRequest,
+    current_user: CurrentUser,
     _: Annotated[None, Depends(require_system_admin)],
     user_service: Annotated[UserService, Depends(get_user_service)],
     db: Annotated[AsyncSession, Depends(get_db)]
@@ -82,6 +83,7 @@ async def create_user(
             password=request.password,
             company_id=request.company_id,
             role=request.role,
+            current_user=current_user,
             email=request.email,
             is_active=request.is_active,
         )
@@ -105,6 +107,7 @@ async def create_user(
 async def update_user(
     user_id: str,
     request: UserUpdateRequest,
+    current_user: CurrentUser,
     _: Annotated[None, Depends(require_system_admin)],
     user_service: Annotated[UserService, Depends(get_user_service)],
     db: Annotated[AsyncSession, Depends(get_db)]
@@ -116,6 +119,7 @@ async def update_user(
 
         user = await user_service.update_user(
             user_id=user_id,
+            current_user=current_user,
             name=update_data.get("name"),
             phone_number=update_data.get("phone_number"),
             password=update_data.get("password"),
@@ -155,7 +159,7 @@ async def delete_user(
 ):
     """Delete user (system admin only)."""
     try:
-        await user_service.delete_user(user_id, str(current_user.id))
+        await user_service.delete_user(user_id, current_user)
         await db.commit()
 
     except UserNotFoundException:
