@@ -299,6 +299,35 @@ expect(states[0], isA<UserLoading>());  // Fails!
 
 **Tools:** pytest + pytest-asyncio (backend), mockito (client)
 
+### Mockito Pattern (Flutter/Dart)
+**Critical:** Mock parameters must be nullable to accept matchers, even when real interface has non-nullable required parameters.
+
+```dart
+// Real service interface
+Future<User> createUser({
+  required String name,      // Non-nullable
+  required String password,  // Non-nullable
+});
+
+// Generated mock MUST use nullable parameters
+Future<User> createUser({
+  required String? name,     // Nullable to accept anyNamed()
+  required String? password, // Nullable to accept anyNamed()
+});
+```
+
+**Why:** Mockito matchers (`anyNamed()`, `any()`, `argThat()`) return `null`. Dart null safety prevents passing `null` to non-nullable parameters.
+
+**Tests use standard matchers:**
+```dart
+when(mockService.createUser(
+  name: anyNamed('name'),      // Returns null, needs String?
+  password: anyNamed('password'),
+)).thenAnswer((_) async => testUser);
+```
+
+**Reference:** See `auth_service_test.mocks.dart:42` for pattern example.
+
 ---
 
 ## Database
@@ -338,6 +367,15 @@ expect(states[0], isA<UserLoading>());  // Fails!
 ---
 
 ## Change Log (Recent)
+
+### 2025-11-19: Mockito Null Safety Pattern
+- **Fixed:** Flutter test compilation errors in `user_provider_test.mocks.dart`
+- **Pattern:** Mock parameters must be nullable (`String?`) to accept Mockito matchers, even when real service has non-nullable required parameters
+- **Why:** Matchers (`anyNamed()`, `any()`, `argThat()`) return `null`; Dart null safety prevents passing `null` to non-nullable types
+- **Solution:** Make all mock parameters nullable in `.mocks.dart` files
+- **Reference:** Verified pattern in existing `auth_service_test.mocks.dart`
+- **Impact:** All Flutter tests now compile correctly
+- **Documentation:** Added Mockito pattern section to Testing Strategy
 
 ### 2025-11-19: User Model Migration + Core Modules
 - **Completed:** Auth/Users split - User model moved from `auth/` to `users/` feature
@@ -405,4 +443,4 @@ expect(states[0], isA<UserLoading>());  // Fails!
 
 ---
 
-**Last Updated:** 2025-11-19 (User model migration + core modules + name field)
+**Last Updated:** 2025-11-19 (Mockito null safety pattern + User model migration + core modules)
