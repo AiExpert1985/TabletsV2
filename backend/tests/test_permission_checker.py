@@ -2,7 +2,8 @@
 import pytest
 from uuid import uuid4
 
-from features.auth.models import User, UserRole
+from features.users.models import User
+from core.enums import UserRole
 from features.authorization.permissions import Permission
 from features.authorization.permission_checker import (
     get_user_permissions,
@@ -24,6 +25,7 @@ def test_system_admin_has_all_permissions():
     """System admin gets all permissions."""
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000001",
         hashed_password="hash",
         role=UserRole.SYSTEM_ADMIN,
@@ -45,6 +47,7 @@ def test_company_admin_with_admin_role():
     company_id = uuid4()
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000002",
         hashed_password="hash",
         role=UserRole.COMPANY_ADMIN,
@@ -68,6 +71,7 @@ def test_user_with_viewer_role():
     company_id = uuid4()
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000003",
         hashed_password="hash",
         role=UserRole.VIEWER,
@@ -91,6 +95,7 @@ def test_user_with_salesperson_role():
     company_id = uuid4()
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000004",
         hashed_password="hash",
         role=UserRole.SALESPERSON,
@@ -114,6 +119,7 @@ def test_user_with_accountant_role():
     company_id = uuid4()
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000005",
         hashed_password="hash",
         role=UserRole.ACCOUNTANT,
@@ -144,6 +150,7 @@ def test_has_permission_true():
     """has_permission returns True when user has permission."""
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000006",
         hashed_password="hash",
         role=UserRole.SYSTEM_ADMIN,
@@ -160,6 +167,7 @@ def test_has_permission_false():
     company_id = uuid4()
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000007",
         hashed_password="hash",
         role=UserRole.VIEWER,
@@ -180,6 +188,7 @@ def test_require_permission_allows_when_has_permission():
     """require_permission allows when user has permission."""
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000008",
         hashed_password="hash",
         role=UserRole.SYSTEM_ADMIN,
@@ -197,6 +206,7 @@ def test_require_permission_denies_when_lacks_permission():
     company_id = uuid4()
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000009",
         hashed_password="hash",
         role=UserRole.VIEWER,
@@ -218,6 +228,7 @@ def test_require_permission_checks_company_isolation():
 
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000010",
         hashed_password="hash",
         role=UserRole.VIEWER,
@@ -241,6 +252,7 @@ def test_require_permission_system_admin_bypasses_company_check():
 
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000011",
         hashed_password="hash",
         role=UserRole.SYSTEM_ADMIN,
@@ -261,6 +273,7 @@ def test_require_any_permission_allows_when_has_one():
     company_id = uuid4()
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000012",
         hashed_password="hash",
         role=UserRole.VIEWER,
@@ -280,6 +293,7 @@ def test_require_any_permission_denies_when_has_none():
     company_id = uuid4()
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000013",
         hashed_password="hash",
         role=UserRole.VIEWER,
@@ -306,6 +320,7 @@ def test_require_all_permissions_allows_when_has_all():
     company_id = uuid4()
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000014",
         hashed_password="hash",
         role=UserRole.COMPANY_ADMIN,
@@ -325,6 +340,7 @@ def test_require_all_permissions_denies_when_missing_one():
     company_id = uuid4()
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000015",
         hashed_password="hash",
         role=UserRole.SALESPERSON,
@@ -350,6 +366,7 @@ def test_require_system_admin_allows_system_admin():
     """require_system_admin allows system admin."""
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000016",
         hashed_password="hash",
         role=UserRole.SYSTEM_ADMIN,
@@ -365,6 +382,7 @@ def test_require_system_admin_denies_others():
     company_id = uuid4()
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000017",
         hashed_password="hash",
         role=UserRole.COMPANY_ADMIN,
@@ -386,6 +404,7 @@ def test_require_company_admin_allows_system_admin():
     """require_company_admin allows system admin."""
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000018",
         hashed_password="hash",
         role=UserRole.SYSTEM_ADMIN,
@@ -401,6 +420,7 @@ def test_require_company_admin_allows_company_admin():
     company_id = uuid4()
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000019",
         hashed_password="hash",
         role=UserRole.COMPANY_ADMIN,
@@ -416,6 +436,7 @@ def test_require_company_admin_denies_regular_user():
     company_id = uuid4()
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000020",
         hashed_password="hash",
         role=UserRole.VIEWER,

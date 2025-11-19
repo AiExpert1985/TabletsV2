@@ -3,7 +3,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from features.auth.auth_services import AuthService, TokenPair
-from features.auth.models import User
+from features.users.models import User
 from features.users.repository import UserRepository
 from features.auth.repository import RefreshTokenRepository
 from features.company.models import Company

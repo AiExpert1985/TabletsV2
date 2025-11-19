@@ -2,7 +2,8 @@
 import pytest
 from unittest.mock import AsyncMock, Mock
 from features.users.service import UserService
-from features.auth.models import User, UserRole
+from features.users.models import User
+from core.enums import UserRole
 from core.exceptions import PhoneAlreadyExistsException, UserNotFoundException
 
 
@@ -38,6 +39,7 @@ class TestUserService:
 
         # Act
         user = await user_service.create_user(
+            name="Test User",
             phone_number="07700000001",
             password="TestPass123",
             company_id="123e4567-e89b-12d3-a456-426614174000",
@@ -58,6 +60,7 @@ class TestUserService:
         # Act & Assert
         with pytest.raises(PhoneAlreadyExistsException):
             await user_service.create_user(
+                name="Test User",
                 phone_number="07700000001",
                 password="TestPass123",
                 company_id="123e4567-e89b-12d3-a456-426614174000",
@@ -70,6 +73,7 @@ class TestUserService:
         # Act & Assert
         with pytest.raises(ValueError, match="System admin cannot have a company_id"):
             await user_service.create_user(
+                name="System Admin",
                 phone_number="07700000001",
                 password="TestPass123",
                 company_id="123e4567-e89b-12d3-a456-426614174000",
@@ -82,6 +86,7 @@ class TestUserService:
         # Act & Assert
         with pytest.raises(ValueError, match="must have a company_id"):
             await user_service.create_user(
+                name="Test User",
                 phone_number="07700000001",
                 password="TestPass123",
                 company_id=None,

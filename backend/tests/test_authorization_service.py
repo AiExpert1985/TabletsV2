@@ -4,7 +4,8 @@ from unittest.mock import Mock
 from uuid import uuid4
 from features.authorization.service import AuthorizationService, create_authorization_service
 from features.authorization.permissions import Permission
-from features.auth.models import User, UserRole
+from features.users.models import User
+from core.enums import UserRole
 
 
 @pytest.fixture

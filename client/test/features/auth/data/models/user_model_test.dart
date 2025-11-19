@@ -8,6 +8,7 @@ void main() {
 
     final Map<String, dynamic> validJson = {
       'id': '123e4567-e89b-12d3-a456-426614174000',
+      'name': 'Test User',
       'phone_number': '9647701234567',
       'email': 'test@example.com',
       'company_id': '223e4567-e89b-12d3-a456-426614174000',
@@ -38,6 +39,7 @@ void main() {
       test('creates UserModel with null optional fields', () {
         final json = {
           'id': '123e4567-e89b-12d3-a456-426614174000',
+          'name': 'Test User',
           'phone_number': '9647701234567',
           'email': null,
           'company_id': null,
@@ -60,6 +62,7 @@ void main() {
       test('creates UserModel for system admin', () {
         final json = {
           'id': '123e4567-e89b-12d3-a456-426614174000',
+          'name': 'System Admin',
           'phone_number': '9647701234567',
           'email': 'admin@example.com',
           'company_id': null,
@@ -81,6 +84,7 @@ void main() {
       test('handles empty permissions array', () {
         final json = {
           'id': '123e4567-e89b-12d3-a456-426614174000',
+          'name': 'Test User',
           'phone_number': '9647701234567',
           'email': null,
           'company_id': '223e4567-e89b-12d3-a456-426614174000',
@@ -112,6 +116,7 @@ void main() {
       test('converts UserModel to JSON with all fields', () {
         final user = UserModel(
           id: '123e4567-e89b-12d3-a456-426614174000',
+          name: 'Test User',
           phoneNumber: '9647701234567',
           email: 'test@example.com',
           companyId: '223e4567-e89b-12d3-a456-426614174000',
@@ -140,6 +145,7 @@ void main() {
       test('converts UserModel to JSON with null optional fields', () {
         final user = UserModel(
           id: '123e4567-e89b-12d3-a456-426614174000',
+          name: 'Test User',
           phoneNumber: '9647701234567',
           email: null,
           companyId: null,
@@ -161,6 +167,7 @@ void main() {
       test('converts datetime to ISO 8601 format', () {
         final user = UserModel(
           id: '123e4567-e89b-12d3-a456-426614174000',
+          name: 'Test User',
           phoneNumber: '9647701234567',
           role: 'viewer',
           isActive: true,
@@ -196,6 +203,7 @@ void main() {
       test('returns itself (UserModel extends User)', () {
         final user = UserModel(
           id: '123e4567-e89b-12d3-a456-426614174000',
+          name: 'Test User',
           phoneNumber: '9647701234567',
           role: 'viewer',
           isActive: true,

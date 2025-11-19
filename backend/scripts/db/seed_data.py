@@ -20,7 +20,7 @@ backend_dir = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(backend_dir))
 
 from core.database import AsyncSessionLocal
-from features.auth.models import UserRole
+from core.enums import UserRole
 from features.company.models import Company
 from features.product.models import Product
 from features.company.repository import CompanyRepository
@@ -82,6 +82,7 @@ async def seed_users(users_data: list[dict], companies: dict[str, Company]) -> l
                     continue
 
                 user = await user_service.create_user(
+                    name=data["name"],
                     phone_number=data["phone_number"],
                     password=data["password"],
                     company_id=str(company.id),
@@ -94,7 +95,7 @@ async def seed_users(users_data: list[dict], companies: dict[str, Company]) -> l
 
             print(f"✅ Created {len(users)} users:")
             for user in users:
-                print(f"   - {user.phone_number} ({user.role.value})")
+                print(f"   - {user.name} - {user.phone_number} ({user.role.value})")
 
             return users
         except Exception as e:
@@ -113,9 +114,10 @@ async def seed_products(products_data: list[dict], companies: dict[str, Company]
 
             # Create a system admin context for product creation
             # System admin can create products for any company by specifying company_id
-            from features.auth.models import User
+            from features.users.models import User
             system_admin = User(
                 id=uuid.uuid4(),
+                name="Seed Admin",
                 phone_number="+9647700000000",  # Dummy admin for seeding
                 hashed_password="dummy",
                 role=UserRole.SYSTEM_ADMIN,

@@ -26,7 +26,8 @@ sys.path.insert(0, str(backend_dir))
 
 from core.database import AsyncSessionLocal, engine, Base, init_db
 from core.security import hash_password, normalize_phone_number
-from features.auth.models import User, UserRole
+from features.users.models import User
+from core.enums import UserRole
 from features.users.repository import UserRepository
 from features.company.models import Company
 from features.product.models import Product
@@ -62,6 +63,7 @@ async def create_admin():
             normalized_phone = normalize_phone_number(ADMIN_PHONE)
 
             user = await user_repo.create(
+                name="System Admin",
                 phone_number=normalized_phone,
                 hashed_password=hash_password(ADMIN_PASSWORD),
                 company_id=None,

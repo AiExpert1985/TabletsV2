@@ -1,5 +1,6 @@
 /// DTO for creating a new user
 class UserCreateDto {
+  final String name;
   final String phoneNumber;
   final String password;
   final String? email;
@@ -8,6 +9,7 @@ class UserCreateDto {
   final bool isActive;
 
   UserCreateDto({
+    required this.name,
     required this.phoneNumber,
     required this.password,
     this.email,
@@ -18,6 +20,7 @@ class UserCreateDto {
 
   Map<String, dynamic> toJson() {
     return {
+      'name': name,
       'phone_number': phoneNumber,
       'password': password,
       if (email != null) 'email': email,

@@ -3,7 +3,8 @@ import pytest
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from features.auth.models import User, UserRole
+from features.users.models import User
+from core.enums import UserRole
 from features.users.repository import UserRepository
 from features.auth.repository import RefreshTokenRepository
 from features.company.models import Company
@@ -27,6 +28,7 @@ class TestUserRepository:
         """Create user stores user in database."""
         # Act
         user = await user_repo.create(
+            name="Test User",
             phone_number="9647700000010",
             hashed_password=hash_password("TestPass123"),
             company_id=str(test_company.id),
@@ -49,6 +51,7 @@ class TestUserRepository:
         """Create system admin with no company."""
         # Act
         user = await user_repo.create(
+            name="System Admin",
             phone_number="9647700000020",
             hashed_password=hash_password("AdminPass123"),
             company_id=None,
@@ -208,9 +211,9 @@ class TestUserRepository:
 
         # Fetch fresh user
         updated_user = await user_repo.get_by_id(str(test_user.id))
+        assert updated_user is not None, "User should exist after update"
 
-        # Assert
-        assert updated_user is not None
+        # Assert changes
         assert updated_user.is_active is False
 
     @pytest.mark.asyncio
@@ -223,6 +226,7 @@ class TestUserRepository:
         """Delete user removes user from database."""
         # Arrange - create user to delete
         user = await user_repo.create(
+            name="Test User",
             phone_number="9647700000099",
             hashed_password=hash_password("Test123"),
             company_id=str(test_company.id),

@@ -3,7 +3,8 @@ Authorization Service - Core permission checking logic.
 
 Implements single-role permission system.
 """
-from features.auth.models import User, UserRole
+from features.users.models import User
+from core.enums import UserRole
 from features.authorization.permissions import Permission
 from features.authorization.role_permissions import get_permissions_for_role
 from features.logging.logger import get_logger

@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, timezone
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from features.auth.models import User
+from features.users.models import User
 
 
 class UserRepository:
@@ -16,15 +16,17 @@ class UserRepository:
 
     async def create(
         self,
+        name: str,
         phone_number: str,
         hashed_password: str,
         company_id: str | None = None,
         role: str = "user"
     ) -> User:
         """Create new user with multi-tenancy support."""
-        from features.auth.models import UserRole
+        from core.enums import UserRole
         from sqlalchemy.orm import selectinload
         user = User(
+            name=name,
             phone_number=phone_number,
             hashed_password=hashed_password,
             company_id=uuid.UUID(company_id) if company_id else None,

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import String, Numeric, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from core.database import Base
-from features.auth.models import UUID
+from core.models import UUID
 
 if TYPE_CHECKING:
     from features.company.models import Company

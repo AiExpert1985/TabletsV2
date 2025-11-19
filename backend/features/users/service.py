@@ -1,7 +1,8 @@
 """Business logic for user management (system admin operations)."""
 import uuid
-from features.auth.models import User, UserRole
+from features.users.models import User
 from features.users.repository import UserRepository
+from core.enums import UserRole
 from core.security import hash_password, normalize_phone_number
 from core.exceptions import (
     PhoneAlreadyExistsException,
@@ -19,6 +20,7 @@ class UserService:
 
     async def create_user(
         self,
+        name: str,
         phone_number: str,
         password: str,
         company_id: str | None,
@@ -36,6 +38,7 @@ class UserService:
         - Passwords are hashed with bcrypt
 
         Args:
+            name: User's full name
             phone_number: Phone number (will be normalized)
             password: Plain text password (will be hashed)
             company_id: UUID of company (None for system admin)
@@ -70,6 +73,7 @@ class UserService:
 
         # 5. Create user model
         user = User(
+            name=name,
             phone_number=normalized_phone,
             hashed_password=hashed_password,
             email=email,
@@ -117,6 +121,7 @@ class UserService:
     async def update_user(
         self,
         user_id: str,
+        name: str | None = None,
         phone_number: str | None = None,
         password: str | None = None,
         email: str | None = None,
@@ -134,6 +139,7 @@ class UserService:
 
         Args:
             user_id: User UUID
+            name: New name (optional)
             phone_number: New phone number (optional)
             password: New password (optional, will be hashed)
             email: New email (optional)
@@ -152,11 +158,15 @@ class UserService:
         # 1. Get existing user
         user = await self.get_user(user_id)
 
-        # 2. Update password if provided
+        # 2. Update name if provided
+        if name is not None:
+            user.name = name
+
+        # 3. Update password if provided
         if password:
             user.hashed_password = hash_password(password)
 
-        # 3. Update phone if provided
+        # 4. Update phone if provided
         if phone_number:
             normalized_phone = normalize_phone_number(phone_number)
             if normalized_phone != user.phone_number:
@@ -164,18 +174,18 @@ class UserService:
                     raise PhoneAlreadyExistsException()
                 user.phone_number = normalized_phone
 
-        # 4. Update role with validation
+        # 5. Update role with validation
         if role:
             new_role = UserRole(role)
             if new_role == UserRole.SYSTEM_ADMIN and user.company_id:
                 raise ValueError("Cannot make user with company_id a system admin")
             user.role = new_role
 
-        # 5. Update company_id
+        # 6. Update company_id
         if company_id is not None:
             user.company_id = uuid.UUID(company_id) if company_id else None
 
-        # 6. Update other fields
+        # 7. Update other fields
         if email is not None:
             user.email = email
         if is_active is not None:

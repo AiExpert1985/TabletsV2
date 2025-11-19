@@ -22,6 +22,7 @@ class UserFormScreen extends ConsumerStatefulWidget {
 
 class _UserFormScreenState extends ConsumerState<UserFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _emailController = TextEditingController();
@@ -45,6 +46,7 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
     _emailController.dispose();
@@ -58,6 +60,7 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
   void _populateForm(User user) {
     setState(() {
       _existingUser = user;
+      _nameController.text = user.name;
       _phoneController.text = user.phoneNumber;
       _emailController.text = user.email ?? '';
       _selectedCompanyId = user.companyId;
@@ -76,6 +79,9 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
     if (_isEditMode) {
       await ref.read(userProvider.notifier).updateUser(
             id: widget.userId!,
+            name: _nameController.text.trim() != _existingUser?.name
+                ? _nameController.text.trim()
+                : null,
             phoneNumber: _phoneController.text.trim() != _existingUser?.phoneNumber
                 ? _phoneController.text.trim()
                 : null,
@@ -95,6 +101,7 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
           );
     } else {
       await ref.read(userProvider.notifier).createUser(
+            name: _nameController.text.trim(),
             phoneNumber: _phoneController.text.trim(),
             password: _passwordController.text.trim(),
             email: _emailController.text.trim().isEmpty
@@ -184,6 +191,22 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Name',
+                        hintText: 'Enter full name',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.name,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Name is required';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _phoneController,
                       decoration: const InputDecoration(

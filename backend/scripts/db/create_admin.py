@@ -20,11 +20,12 @@ sys.path.insert(0, str(backend_dir))
 from core.database import AsyncSessionLocal, init_db
 from features.users.repository import UserRepository
 from features.users.service import UserService
-from features.auth.models import UserRole
+from core.enums import UserRole
 from core.exceptions import PhoneAlreadyExistsException
 
 
 # Hardcoded credentials
+ADMIN_NAME = "System Administrator"
 ADMIN_PHONE = "07701791983"
 ADMIN_PASSWORD = "Admin789"
 
@@ -48,6 +49,7 @@ async def create_admin():
             # Create admin using service
             print("Creating system admin...")
             user = await user_service.create_user(
+                name=ADMIN_NAME,
                 phone_number=ADMIN_PHONE,
                 password=ADMIN_PASSWORD,
                 company_id=None,  # System admin has no company
@@ -60,6 +62,7 @@ async def create_admin():
             print("✅ SYSTEM ADMIN CREATED!")
             print("=" * 70)
             print()
+            print(f"Name:     {user.name}")
             print(f"Phone:    {user.phone_number}")
             print(f"Password: {ADMIN_PASSWORD}")
             print(f"ID:       {user.id}")

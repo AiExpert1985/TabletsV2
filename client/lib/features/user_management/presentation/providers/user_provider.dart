@@ -57,6 +57,7 @@ class UserNotifier extends StateNotifier<UserState> {
 
   /// Create a new user (system admin only)
   Future<void> createUser({
+    required String name,
     required String phoneNumber,
     required String password,
     String? email,
@@ -67,6 +68,7 @@ class UserNotifier extends StateNotifier<UserState> {
     state = UserLoading();
     try {
       final user = await userService.createUser(
+        name: name,
         phoneNumber: phoneNumber,
         password: password,
         email: email,
@@ -85,6 +87,7 @@ class UserNotifier extends StateNotifier<UserState> {
   /// Update user (system admin only)
   Future<void> updateUser({
     required String id,
+    String? name,
     String? phoneNumber,
     String? email,
     String? password,
@@ -96,6 +99,7 @@ class UserNotifier extends StateNotifier<UserState> {
     try {
       final user = await userService.updateUser(
         id: id,
+        name: name,
         phoneNumber: phoneNumber,
         email: email,
         password: password,

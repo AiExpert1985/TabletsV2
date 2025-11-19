@@ -5,7 +5,9 @@
 **Stack:** FastAPI + SQLAlchemy 2.0 (async) + Flutter + Riverpod
 **Auth:** Phone (+964) + bcrypt + JWT + single-role RBAC
 **Tests:** 169 backend, 95+ client (100% pass)
+**Architecture:** Service layer + Feature-based + Core modules (shared types)
 **Features:** Auth, Users, Companies, Products, Authorization
+**Database:** SQLite (dev) → PostgreSQL (prod) with cross-DB type decorators
 
 ---
 
@@ -37,14 +39,49 @@ features/{feature_name}/
   └── schemas.py         # Request/response DTOs
 ```
 
+**Core Modules:** (Shared across features)
+- `core/models.py` - SQLAlchemy type decorators (UUID, JSONList)
+- `core/enums.py` - Shared enums (UserRole)
+- `core/exceptions.py` - Custom exception types
+
 **Features:**
-- `auth/` - Authentication (login, tokens) - owns User model
-- `users/` - User CRUD - system admin only
+- `auth/` - Authentication (login, tokens, RefreshToken model)
+- `users/` - User CRUD + User model (system admin only)
 - `company/` - Company CRUD - system admin only
 - `product/` - Product CRUD with multi-tenancy
 - `authorization/` - Permission system (7 roles, 36 permissions)
 
-### 3. Single-Role Authorization
+### 3. Core Modules (Shared Code)
+**Pattern:** Shared types, enums, and utilities in `core/` directory
+
+**Purpose:**
+- Avoid circular dependencies between features
+- Provide consistent cross-database types (UUID, JSONList)
+- Share enums used by multiple features (UserRole)
+
+**Key Modules:**
+```python
+# core/models.py - SQLAlchemy type decorators
+class UUID(TypeDecorator):
+    """Cross-DB UUID type (PostgreSQL UUID or SQLite CHAR(36))"""
+    impl = String(36)
+    cache_ok = True
+
+class JSONList(TypeDecorator):
+    """Cross-DB JSON list type"""
+    impl = Text
+    cache_ok = True
+
+# core/enums.py - Shared enums
+class UserRole(str, enum.Enum):
+    SYSTEM_ADMIN = "system_admin"
+    COMPANY_ADMIN = "company_admin"
+    # ... other roles
+```
+
+**Rule:** Only shared, stable types go in `core/`. Feature-specific models stay in their features.
+
+### 4. Single-Role Authorization
 **Each user = ONE role → ONE permission set**
 
 ```python
@@ -67,14 +104,14 @@ require_permission(user, Permission.VIEW_INVOICES, company_id=invoice.company_id
 - `permission_checker.py` - Authorization functions
 - `service.py` - Permission calculation logic
 
-### 4. Multi-Tenancy
+### 5. Multi-Tenancy
 **Pattern:** Single DB + `company_id` filtering via `CompanyContext`
 
 - System admin: `company_id = NULL` (sees all)
 - Company users: Auto-filtered by their `company_id`
 - Use `BaseRepository` for scoped entities
 
-### 5. SQLAlchemy Eager Loading (CRITICAL)
+### 6. SQLAlchemy Eager Loading (CRITICAL)
 **Problem:** Accessing relationships outside async context → MissingGreenlet error
 
 **Solution:** Eagerly load relationships in all repository methods
@@ -268,7 +305,11 @@ expect(states[0], isA<UserLoading>());  // Fails!
 
 **Dev:** SQLite (aiosqlite)
 **Prod:** PostgreSQL (asyncpg)
-**UUIDs:** Custom GUID TypeDecorator (cross-DB consistency)
+
+**Cross-Database Compatibility:**
+- `UUID` TypeDecorator in `core/models.py` (PostgreSQL UUID or SQLite CHAR(36))
+- `JSONList` TypeDecorator for JSON arrays (cross-DB serialization)
+- Ensures consistent behavior across development and production
 
 **Seed Data:** `scripts/db/seed_data.py` + `seed_data.json` (committed)
 
@@ -297,6 +338,19 @@ expect(states[0], isA<UserLoading>());  // Fails!
 ---
 
 ## Change Log (Recent)
+
+### 2025-11-19: User Model Migration + Core Modules
+- **Completed:** Auth/Users split - User model moved from `auth/` to `users/` feature
+- **Created:** `core/` directory for shared code:
+  - `core/models.py` - SQLAlchemy type decorators (UUID, JSONList) for cross-DB compatibility
+  - `core/enums.py` - Shared enums (UserRole) used across features
+- **Added:** `name` field to User model (required field across entire stack)
+- **Updated:** 26+ backend files with new import structure
+- **Updated:** All Flutter user management layers (entities, DTOs, services, providers, UI)
+- **Updated:** All tests (backend + Flutter) to include name field
+- **Why:** Proper separation of concerns, User model belongs where CRUD operations exist
+- **Pattern:** Shared types in `core/`, feature-specific models in their features
+- **Tests:** 169 backend tests, 95+ Flutter tests (100% pass)
 
 ### 2025-11-19: Client User Management + Authorization
 - **Added:** User CRUD in Flutter (create, edit, delete, list)
@@ -351,4 +405,4 @@ expect(states[0], isA<UserLoading>());  // Fails!
 
 ---
 
-**Last Updated:** 2025-11-19 (Client user management + authorization system)
+**Last Updated:** 2025-11-19 (User model migration + core modules + name field)

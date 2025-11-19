@@ -9,6 +9,7 @@ void main() {
     // Test users with different roles
     final systemAdminUser = User(
       id: '1',
+      name: 'Test User',
       phoneNumber: '+9647701234567',
       role: UserRole.systemAdmin,
       isActive: true,
@@ -18,6 +19,7 @@ void main() {
 
     final companyAdminUser = User(
       id: '2',
+      name: 'Test User',
       phoneNumber: '+9647701234568',
       companyId: 'company-1',
       role: UserRole.companyAdmin,
@@ -28,6 +30,7 @@ void main() {
 
     final accountantUser = User(
       id: '3',
+      name: 'Test User',
       phoneNumber: '+9647701234569',
       companyId: 'company-1',
       role: UserRole.accountant,
@@ -38,6 +41,7 @@ void main() {
 
     final viewerUser = User(
       id: '4',
+      name: 'Test User',
       phoneNumber: '+9647701234570',
       companyId: 'company-1',
       role: UserRole.viewer,
@@ -80,6 +84,7 @@ void main() {
       test('returns empty set for unknown role', () {
         final unknownUser = User(
           id: '5',
+          name: 'Test User',
           phoneNumber: '+9647701234571',
           role: 'unknown_role',
           isActive: true,

@@ -1,6 +1,7 @@
 /// User entity
 class User {
   final String id;
+  final String name;
   final String phoneNumber;
   final String? email;
   final String? companyId;  // NULL for system admin
@@ -13,6 +14,7 @@ class User {
 
   User({
     required this.id,
+    required this.name,
     required this.phoneNumber,
     this.email,
     this.companyId,

@@ -6,7 +6,8 @@ from uuid import uuid4
 from features.product.service import ProductService, ProductAlreadyExistsException, ProductNotFoundException
 from features.product.models import Product
 from core.company_context import CompanyContext
-from features.auth.models import User, UserRole
+from features.users.models import User
+from core.enums import UserRole
 
 
 @pytest.fixture
@@ -35,6 +36,7 @@ def company_ctx_regular():
     """Create company context for regular user."""
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000001",
         hashed_password="hashed",
         company_id=uuid4(),
@@ -49,6 +51,7 @@ def company_ctx_admin():
     """Create company context for system admin."""
     user = User(
         id=uuid4(),
+        name="Test User",
         phone_number="+9647700000001",
         hashed_password="hashed",
         role=UserRole.SYSTEM_ADMIN,

@@ -24,6 +24,7 @@ void main() {
     final testDateTime = DateTime.parse('2024-01-15T10:30:00.000Z');
     final testUserModel = UserModel(
       id: '1',
+      name: 'Test User',
       phoneNumber: '+9647701234567',
       email: 'test@example.com',
       companyId: 'company-1',
@@ -103,6 +104,7 @@ void main() {
     group('createUser', () {
       test('returns created user on success', () async {
         final dto = UserCreateDto(
+          name: 'Test User',
           phoneNumber: '+9647701234567',
           password: 'password123',
           email: 'test@example.com',
@@ -123,6 +125,7 @@ void main() {
 
       test('rethrows HttpException on conflict', () async {
         final dto = UserCreateDto(
+          name: 'Test User',
           phoneNumber: '+9647701234567',
           password: 'password123',
           role: 'viewer',
@@ -147,6 +150,7 @@ void main() {
 
         final updatedUser = UserModel(
           id: '1',
+          name: 'Test User',
           phoneNumber: '+9647701234568',
           email: 'updated@example.com',
           companyId: 'company-1',

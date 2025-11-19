@@ -9,7 +9,9 @@ from core.config import Settings, get_settings
 from core.security import hash_password
 
 # Import all models so SQLAlchemy can map relationships
-from features.auth.models import User, UserRole, RefreshToken
+from features.users.models import User
+from core.enums import UserRole
+from features.auth.models import RefreshToken
 from features.company.models import Company
 from features.product.models import Product
 
@@ -159,6 +161,7 @@ async def test_company(company_repo: CompanyRepository) -> Company:
 async def test_user(user_repo: UserRepository, test_company: Company) -> User:
     """Create regular test user with viewer role."""
     user = await user_repo.create(
+        name="Test User",
         phone_number="9647700000001",
         hashed_password=hash_password("TestPassword123"),
         company_id=str(test_company.id),
@@ -171,6 +174,7 @@ async def test_user(user_repo: UserRepository, test_company: Company) -> User:
 async def test_admin_user(user_repo: UserRepository, test_company: Company) -> User:
     """Create admin test user."""
     user = await user_repo.create(
+        name="Admin User",
         phone_number="9647700000002",
         hashed_password=hash_password("AdminPassword123"),
         company_id=str(test_company.id),
@@ -183,6 +187,7 @@ async def test_admin_user(user_repo: UserRepository, test_company: Company) -> U
 async def test_system_admin(user_repo: UserRepository) -> User:
     """Create system admin test user."""
     user = await user_repo.create(
+        name="System Admin",
         phone_number="9647700000000",
         hashed_password=hash_password("SystemAdminPassword123"),
         company_id=None,

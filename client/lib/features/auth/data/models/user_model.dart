@@ -4,6 +4,7 @@ import 'package:client/features/auth/domain/entities/user.dart';
 class UserModel extends User {
   UserModel({
     required super.id,
+    required super.name,
     required super.phoneNumber,
     super.email,
     super.companyId,
@@ -19,6 +20,7 @@ class UserModel extends User {
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'] as String,
+      name: json['name'] as String,
       phoneNumber: json['phone_number'] as String,
       email: json['email'] as String?,
       companyId: json['company_id'] as String?,
@@ -40,6 +42,7 @@ class UserModel extends User {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'name': name,
       'phone_number': phoneNumber,
       'email': email,
       'company_id': companyId,

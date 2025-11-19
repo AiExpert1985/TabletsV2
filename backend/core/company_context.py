@@ -8,7 +8,7 @@ from typing import Annotated
 from uuid import UUID
 from fastapi import Depends, HTTPException, status
 from features.auth.dependencies import CurrentUser
-from features.auth.models import UserRole
+from core.enums import UserRole
 from features.logging.logger import get_logger
 
 logger = get_logger(__name__)

@@ -14,6 +14,7 @@ __all__ = ["UserResponse", "UserCreateRequest", "UserUpdateRequest"]
 class UserCreateRequest(BaseModel):
     """Create user request (system admin only)."""
 
+    name: str
     phone_number: str
     password: str = Field(..., min_length=8, max_length=128)
     email: str | None = None
@@ -25,6 +26,7 @@ class UserCreateRequest(BaseModel):
 class UserUpdateRequest(BaseModel):
     """Update user request (system admin only)."""
 
+    name: str | None = None
     phone_number: str | None = None
     email: str | None = None
     password: str | None = Field(None, min_length=8, max_length=128)
