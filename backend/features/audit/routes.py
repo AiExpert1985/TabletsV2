@@ -13,7 +13,7 @@ from features.audit.schemas import (
     EntityHistoryResponse,
 )
 from features.audit.service import AuditService
-from features.auth.dependencies import get_current_active_user
+from features.auth.dependencies import CurrentUser
 from features.auth.models import User
 from features.authorization.permission_checker import require_permission
 from features.authorization.permissions import Permission
@@ -23,7 +23,7 @@ router = APIRouter(prefix="/audit-logs", tags=["audit"])
 
 @router.get("", response_model=AuditLogListResponse)
 async def get_audit_logs(
-    current_user: Annotated[User, Depends(get_current_active_user)],
+    current_user: CurrentUser,
     service: Annotated[AuditService, Depends(get_audit_service)],
     company_id: Annotated[Optional[UUID], Query(None)] = None,
     entity_type: Annotated[Optional[str], Query(None)] = None,
@@ -72,7 +72,7 @@ async def get_audit_logs(
 async def get_entity_history(
     entity_type: str,
     entity_id: str,
-    current_user: Annotated[User, Depends(get_current_active_user)],
+    current_user: CurrentUser,
     service: Annotated[AuditService, Depends(get_audit_service)],
 ) -> EntityHistoryResponse:
     """

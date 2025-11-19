@@ -3,6 +3,7 @@ import pytest
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.pool import NullPool
+from httpx import AsyncClient, ASGITransport
 
 from core.database import Base
 from core.config import Settings, get_settings
@@ -212,3 +213,17 @@ def valid_password() -> str:
 def invalid_password() -> str:
     """Invalid password for tests."""
     return "WrongPassword123"
+
+
+# ============================================================================
+# HTTP Client Fixtures
+# ============================================================================
+
+@pytest.fixture
+async def async_client() -> AsyncGenerator[AsyncClient, None]:
+    """Create async HTTP client for testing API endpoints."""
+    from main import app
+    
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
