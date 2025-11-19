@@ -1,7 +1,7 @@
 """Business logic for authentication."""
 import uuid
 from datetime import datetime, timedelta, timezone
-from features.auth.models import User
+from features.users.models import User
 from features.users.repository import UserRepository
 from features.auth.repository import RefreshTokenRepository
 from core.security import (

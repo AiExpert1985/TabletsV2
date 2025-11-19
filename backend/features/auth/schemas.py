@@ -55,6 +55,7 @@ class UserResponse(BaseModel):
     """User response."""
 
     id: str
+    name: str
     phone_number: str
     email: str | None = None
     company_id: str | None = None  # NULL for system_admin

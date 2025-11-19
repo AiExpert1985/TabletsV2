@@ -77,6 +77,7 @@ async def create_user(
     """
     try:
         user = await user_service.create_user(
+            name=request.name,
             phone_number=request.phone_number,
             password=request.password,
             company_id=request.company_id,
@@ -115,6 +116,7 @@ async def update_user(
 
         user = await user_service.update_user(
             user_id=user_id,
+            name=update_data.get("name"),
             phone_number=update_data.get("phone_number"),
             password=update_data.get("password"),
             email=update_data.get("email"),

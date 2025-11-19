@@ -15,6 +15,7 @@
   ],
   "users": [
     {
+      "name": "John Admin",
       "phone_number": "07701111111",
       "password": "Admin123",
       "email": "admin@acme.com",
@@ -22,6 +23,7 @@
       "role": "company_admin"
     },
     {
+      "name": "Sarah Sales",
       "phone_number": "07702222222",
       "password": "Sales123",
       "email": "sales@acme.com",
@@ -29,6 +31,7 @@
       "role": "salesperson"
     },
     {
+      "name": "Mike Warehouse",
       "phone_number": "07703333333",
       "password": "Inventory123",
       "email": "inventory@acme.com",
@@ -36,6 +39,7 @@
       "role": "warehouse_keeper"
     },
     {
+      "name": "Emma Accounting",
       "phone_number": "07704444444",
       "password": "Account123",
       "email": "accounting@acme.com",

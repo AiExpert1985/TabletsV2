@@ -26,7 +26,8 @@ sys.path.insert(0, str(backend_dir))
 
 from core.database import AsyncSessionLocal, engine, Base, init_db
 from core.security import hash_password, normalize_phone_number
-from features.auth.models import User, UserRole
+from features.users.models import User
+from core.enums import UserRole
 from features.users.repository import UserRepository
 from features.company.models import Company
 from features.product.models import Product

@@ -2,7 +2,8 @@
 import pytest
 from unittest.mock import AsyncMock, Mock
 from features.users.service import UserService
-from features.auth.models import User, UserRole
+from features.users.models import User
+from core.enums import UserRole
 from core.exceptions import PhoneAlreadyExistsException, UserNotFoundException
 
 

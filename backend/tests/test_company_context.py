@@ -4,7 +4,8 @@ from unittest.mock import Mock
 from uuid import uuid4
 from fastapi import HTTPException
 from core.company_context import CompanyContext, get_company_context
-from features.auth.models import User, UserRole
+from features.users.models import User
+from core.enums import UserRole
 
 
 @pytest.fixture

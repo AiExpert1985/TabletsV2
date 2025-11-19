@@ -7,7 +7,7 @@ Uses PermissionGroups for type-safety and easier maintenance.
 Single role system - each user has ONE role that maps to a permission set.
 """
 from features.authorization.permissions import Permission, PermissionGroups
-from features.auth.models import UserRole
+from core.enums import UserRole
 
 
 # ============================================================================

@@ -14,7 +14,8 @@ Usage:
     require_permission(current_user, Permission.CREATE_PRODUCTS, company_id=uuid)
 """
 from uuid import UUID
-from features.auth.models import User, UserRole
+from features.users.models import User
+from core.enums import UserRole
 from features.authorization.permissions import Permission
 from features.authorization.role_permissions import get_permissions_for_role
 from core.exceptions import PermissionDeniedException

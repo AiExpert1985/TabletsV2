@@ -3,7 +3,8 @@ import pytest
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from features.auth.models import User, UserRole
+from features.users.models import User
+from core.enums import UserRole
 from features.users.repository import UserRepository
 from features.auth.repository import RefreshTokenRepository
 from features.company.models import Company
@@ -208,10 +209,10 @@ class TestUserRepository:
 
         # Fetch fresh user
         updated_user = await user_repo.get_by_id(str(test_user.id))
+        assert updated_user is not None, "User should exist after update"
 
-        # Assert
-        assert updated_user is not None
-        assert updated_user.is_active is False  # type: ignore[union-attr]
+        # Assert changes
+        assert updated_user.is_active is False
 
     @pytest.mark.asyncio
     async def test_delete_user(

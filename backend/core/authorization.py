@@ -1,10 +1,10 @@
 """Authorization helpers for role-based access control."""
 from typing import TYPE_CHECKING
 from fastapi import HTTPException, status
-from features.auth.models import UserRole
+from core.enums import UserRole
 
 if TYPE_CHECKING:
-    from features.auth.models import User
+    from features.users.models import User
 
 
 def require_system_admin(user: User) -> None:
