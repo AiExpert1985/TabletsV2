@@ -3,7 +3,7 @@ import uuid
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from features.audit_logs.models import AuditLog
+from features.audit.models import AuditLog
 from core.enums import EntityType
 
 

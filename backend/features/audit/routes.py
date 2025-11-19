@@ -1,9 +1,9 @@
 """Audit logs routes - System Admin and Company Admin."""
 from typing import Annotated
 from fastapi import APIRouter, Depends, Query
-from features.audit_logs.schemas import AuditLogResponse, AuditLogListResponse
-from features.audit_logs.service import AuditService
-from features.audit_logs.dependencies import get_audit_service
+from features.audit.schemas import AuditLogResponse, AuditLogListResponse
+from features.audit.service import AuditService
+from features.audit.dependencies import get_audit_service
 from features.auth.dependencies import CurrentUser
 from features.authorization.permission_checker import require_permission
 from features.authorization.permissions import Permission

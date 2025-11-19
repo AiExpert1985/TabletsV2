@@ -6,7 +6,7 @@ from core.exceptions import AppException
 from core.enums import EntityType
 
 if TYPE_CHECKING:
-    from features.audit_logs.service import AuditService
+    from features.audit.service import AuditService
     from features.users.models import User
 
 

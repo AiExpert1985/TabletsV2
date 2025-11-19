@@ -1,8 +1,8 @@
 """Service layer for audit logs - business logic."""
 import json
 from typing import Any
-from features.audit_logs.models import AuditLog
-from features.audit_logs.repository import AuditLogRepository
+from features.audit.models import AuditLog
+from features.audit.repository import AuditLogRepository
 from features.users.models import User
 from core.enums import AuditAction, EntityType, UserRole
 

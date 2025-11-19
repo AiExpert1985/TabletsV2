@@ -8,8 +8,8 @@ from features.users.models import User
 from features.users.repository import UserRepository
 from features.auth.dependencies import CurrentUser
 from features.users.service import UserService
-from features.audit_logs.service import AuditService
-from features.audit_logs.dependencies import get_audit_service
+from features.audit.service import AuditService
+from features.audit.dependencies import get_audit_service
 from features.authorization.permission_checker import require_system_admin as check_system_admin
 
 

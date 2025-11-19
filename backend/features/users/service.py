@@ -11,7 +11,7 @@ from core.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from features.audit_logs.service import AuditService
+    from features.audit.service import AuditService
 
 
 class UserService:
