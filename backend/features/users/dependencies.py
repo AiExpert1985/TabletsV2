@@ -50,6 +50,7 @@ def build_user_response(user: User) -> "UserResponse":
 
     return UserResponse(
         id=str(user.id),
+        name=user.name,
         phone_number=user.phone_number,
         email=user.email,
         company_id=str(user.company_id) if user.company_id else None,

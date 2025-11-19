@@ -35,8 +35,8 @@ def product_service(mock_product_repo):
 def company_ctx_regular():
     """Create company context for regular user."""
     user = User(
-        id=uuid4()
-        name="Test User",,
+        id=uuid4(),
+        name="Test User",
         phone_number="+9647700000001",
         hashed_password="hashed",
         company_id=uuid4(),
@@ -50,8 +50,8 @@ def company_ctx_regular():
 def company_ctx_admin():
     """Create company context for system admin."""
     user = User(
-        id=uuid4()
-        name="Test User",,
+        id=uuid4(),
+        name="Test User",
         phone_number="+9647700000001",
         hashed_password="hashed",
         role=UserRole.SYSTEM_ADMIN,

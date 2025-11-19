@@ -28,6 +28,7 @@ class TestUserRepository:
         """Create user stores user in database."""
         # Act
         user = await user_repo.create(
+            name="Test User",
             phone_number="9647700000010",
             hashed_password=hash_password("TestPass123"),
             company_id=str(test_company.id),
@@ -50,6 +51,7 @@ class TestUserRepository:
         """Create system admin with no company."""
         # Act
         user = await user_repo.create(
+            name="System Admin",
             phone_number="9647700000020",
             hashed_password=hash_password("AdminPass123"),
             company_id=None,
@@ -224,6 +226,7 @@ class TestUserRepository:
         """Delete user removes user from database."""
         # Arrange - create user to delete
         user = await user_repo.create(
+            name="Test User",
             phone_number="9647700000099",
             hashed_password=hash_password("Test123"),
             company_id=str(test_company.id),

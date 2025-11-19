@@ -112,6 +112,7 @@ void main() {
       test('converts UserModel to JSON with all fields', () {
         final user = UserModel(
           id: '123e4567-e89b-12d3-a456-426614174000',
+          name: 'Test User',
           phoneNumber: '9647701234567',
           email: 'test@example.com',
           companyId: '223e4567-e89b-12d3-a456-426614174000',
@@ -140,6 +141,7 @@ void main() {
       test('converts UserModel to JSON with null optional fields', () {
         final user = UserModel(
           id: '123e4567-e89b-12d3-a456-426614174000',
+          name: 'Test User',
           phoneNumber: '9647701234567',
           email: null,
           companyId: null,
@@ -161,6 +163,7 @@ void main() {
       test('converts datetime to ISO 8601 format', () {
         final user = UserModel(
           id: '123e4567-e89b-12d3-a456-426614174000',
+          name: 'Test User',
           phoneNumber: '9647701234567',
           role: 'viewer',
           isActive: true,
@@ -196,6 +199,7 @@ void main() {
       test('returns itself (UserModel extends User)', () {
         final user = UserModel(
           id: '123e4567-e89b-12d3-a456-426614174000',
+          name: 'Test User',
           phoneNumber: '9647701234567',
           role: 'viewer',
           isActive: true,

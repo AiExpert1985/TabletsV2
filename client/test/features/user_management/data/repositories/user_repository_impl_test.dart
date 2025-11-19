@@ -24,6 +24,7 @@ void main() {
     final testDateTime = DateTime.parse('2024-01-15T10:30:00.000Z');
     final testUserModel = UserModel(
       id: '1',
+      name: 'Test User',
       phoneNumber: '+9647701234567',
       email: 'test@example.com',
       companyId: 'company-1',
@@ -147,6 +148,7 @@ void main() {
 
         final updatedUser = UserModel(
           id: '1',
+          name: 'Test User',
           phoneNumber: '+9647701234568',
           email: 'updated@example.com',
           companyId: 'company-1',

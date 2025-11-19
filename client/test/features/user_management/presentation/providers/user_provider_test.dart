@@ -23,6 +23,7 @@ void main() {
     final testDateTime = DateTime.parse('2024-01-15T10:30:00.000Z');
     final testUser1 = User(
       id: '1',
+      name: 'Test User',
       phoneNumber: '+9647701234567',
       email: 'test1@example.com',
       companyId: 'company-1',
@@ -34,6 +35,7 @@ void main() {
 
     final testUser2 = User(
       id: '2',
+      name: 'Test User',
       phoneNumber: '+9647701234568',
       email: 'test2@example.com',
       companyId: 'company-1',
@@ -204,6 +206,7 @@ void main() {
 
         await notifier.updateUser(
           id: '1',
+          name: 'Test User',
           phoneNumber: '+9647701234567',
           email: 'updated@example.com',
         );
@@ -243,6 +246,7 @@ void main() {
 
         await notifier.updateUser(
           id: '1',
+          name: 'Test User',
           phoneNumber: '+9647701234568',
         );
 

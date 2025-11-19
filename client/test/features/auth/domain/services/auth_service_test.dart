@@ -22,6 +22,7 @@ void main() {
   group('AuthService', () {
     final testUser = User(
       id: '123e4567-e89b-12d3-a456-426614174000',
+      name: 'Test User',
       phoneNumber: '9647701234567',
       email: 'test@example.com',
       companyId: '223e4567-e89b-12d3-a456-426614174000',

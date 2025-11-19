@@ -63,6 +63,7 @@ async def create_admin():
             normalized_phone = normalize_phone_number(ADMIN_PHONE)
 
             user = await user_repo.create(
+                name="System Admin",
                 phone_number=normalized_phone,
                 hashed_password=hash_password(ADMIN_PASSWORD),
                 company_id=None,
