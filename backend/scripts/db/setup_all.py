@@ -25,12 +25,12 @@ backend_dir = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(backend_dir))
 
 from core.database import AsyncSessionLocal, engine, Base, init_db
-from core.security import hash_password, normalize_phone_number
 from features.users.models import User
 from core.enums import UserRole
 from features.users.repository import UserRepository
 from features.company.models import Company
 from features.product.models import Product
+from features.auth.models import RefreshToken  # Required for SQLAlchemy relationship resolution
 
 
 # Hardcoded admin credentials
@@ -54,18 +54,20 @@ async def create_all_tables():
 
 
 async def create_admin():
-    """Create system admin."""
+    """Create system admin using service layer (follows architecture pattern)."""
     print("👤 Creating system admin...")
 
     async with AsyncSessionLocal() as session:
         try:
+            # Use service layer - never bypass it
             user_repo = UserRepository(session)
-            normalized_phone = normalize_phone_number(ADMIN_PHONE)
+            from features.users.service import UserService
+            user_service = UserService(user_repo)
 
-            user = await user_repo.create(
+            user = await user_service.create_user(
                 name="System Admin",
-                phone_number=normalized_phone,
-                hashed_password=hash_password(ADMIN_PASSWORD),
+                phone_number=ADMIN_PHONE,
+                password=ADMIN_PASSWORD,
                 company_id=None,
                 role=UserRole.SYSTEM_ADMIN.value,
             )
@@ -80,25 +82,30 @@ async def create_admin():
 
 
 async def seed_companies(companies_data: list[dict]) -> dict[str, Company]:
-    """Create companies."""
+    """Create companies using service layer (follows architecture pattern)."""
     async with AsyncSessionLocal() as session:
         try:
+            # Use service layer - never bypass it
+            from features.company.repository import CompanyRepository
+            from features.company.service import CompanyService
+
+            company_repo = CompanyRepository(session)
+            company_service = CompanyService(company_repo)
+
             companies = {}
             for data in companies_data:
-                company = Company(
-                    id=uuid.uuid4(),
-                    name=data["name"],
-                    is_active=data.get("is_active", True),
-                    created_at=datetime.now(timezone.utc),
-                    updated_at=datetime.now(timezone.utc),
-                )
-                session.add(company)
+                company = await company_service.create_company(name=data["name"])
+
+                # Update is_active if needed
+                if not data.get("is_active", True):
+                    company = await company_service.update_company(
+                        company_id=str(company.id),
+                        is_active=False
+                    )
+
                 companies[company.name] = company
 
             await session.commit()
-            for company in companies.values():
-                await session.refresh(company)
-
             print(f"✅ Created {len(companies)} companies")
             return companies
         except Exception as e:
@@ -107,27 +114,28 @@ async def seed_companies(companies_data: list[dict]) -> dict[str, Company]:
 
 
 async def seed_users(users_data: list[dict], companies: dict[str, Company]) -> list[User]:
-    """Create users."""
+    """Create users using service layer (follows architecture pattern)."""
     async with AsyncSessionLocal() as session:
         try:
+            # Use service layer - never bypass it
+            user_repo = UserRepository(session)
+            from features.users.service import UserService
+            user_service = UserService(user_repo)
+
             users = []
             for data in users_data:
                 company = companies.get(data["company_name"])
                 if not company:
                     continue
 
-                user = User(
-                    id=uuid.uuid4(),
-                    phone_number=normalize_phone_number(data["phone_number"]),
-                    hashed_password=hash_password(data["password"]),
-                    company_id=company.id,
-                    role=UserRole(data.get("role", "viewer")),
+                user = await user_service.create_user(
+                    name=data["name"],
+                    phone_number=data["phone_number"],
+                    password=data["password"],
+                    company_id=str(company.id),
+                    role=data.get("role", "viewer"),
                     is_active=data.get("is_active", True),
-                    is_phone_verified=True,
-                    created_at=datetime.now(timezone.utc),
-                    updated_at=datetime.now(timezone.utc),
                 )
-                session.add(user)
                 users.append(user)
 
             await session.commit()
@@ -139,30 +147,45 @@ async def seed_users(users_data: list[dict], companies: dict[str, Company]) -> l
 
 
 async def seed_products(products_data: list[dict], companies: dict[str, Company]) -> list[Product]:
-    """Create products."""
+    """Create products using service layer (follows architecture pattern)."""
     async with AsyncSessionLocal() as session:
         try:
+            # Use service layer - never bypass it
+            from features.product.repository import ProductRepository
+            from features.product.service import ProductService
+            from core.company_context import CompanyContext
+
+            product_repo = ProductRepository(session)
+            product_service = ProductService(product_repo)
+
+            # Create system admin context for product creation
+            system_admin = User(
+                id=uuid.uuid4(),
+                name="Seed Admin",
+                phone_number="+9647700000000",
+                hashed_password="dummy",
+                role=UserRole.SYSTEM_ADMIN,
+                is_active=True,
+            )
+            company_ctx = CompanyContext(user=system_admin)
+
             products = []
             for data in products_data:
                 company = companies.get(data["company_name"])
                 if not company:
                     continue
 
-                product = Product(
-                    id=uuid.uuid4(),
-                    company_id=company.id,
+                product = await product_service.create_product(
+                    company_ctx=company_ctx,
                     name=data["name"],
                     sku=data["sku"],
-                    description=data.get("description"),
-                    cost_price=Decimal(str(data["cost_price"])),
                     selling_price=Decimal(str(data["selling_price"])),
+                    description=data.get("description"),
+                    cost_price=Decimal(str(data["cost_price"])) if data.get("cost_price") else None,
                     stock_quantity=data.get("stock_quantity", 0),
                     reorder_level=data.get("reorder_level", 10),
-                    is_active=data.get("is_active", True),
-                    created_at=datetime.now(timezone.utc),
-                    updated_at=datetime.now(timezone.utc),
+                    company_id=company.id,
                 )
-                session.add(product)
                 products.append(product)
 
             await session.commit()

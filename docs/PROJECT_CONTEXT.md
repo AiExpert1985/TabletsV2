@@ -133,6 +133,44 @@ await db.refresh(user)  # Doesn't load relationships
 
 **Apply to:** get_by_id, get_all, create, save, update methods
 
+### 7. SQLAlchemy Relationship Resolution (CRITICAL)
+**Problem:** String references in relationships fail if both model classes aren't imported at runtime
+
+**When it happens:**
+- Models split across features with relationships (User ↔ RefreshToken)
+- Using string references in `relationship()`: `relationship("RefreshToken")`
+- SQLAlchemy can't resolve the string if the class isn't in the mapper registry
+
+**Solution:** Import all models at application/script entry points
+
+```python
+# ✅ CORRECT - Import all models with relationships
+from features.users.models import User
+from features.auth.models import RefreshToken
+from features.company.models import Company
+from features.product.models import Product
+
+# Now SQLAlchemy can resolve relationship("RefreshToken") in User model
+```
+
+**Apply to:**
+- `main.py` (application startup)
+- All database scripts (`setup_all.py`, `create_admin.py`, `seed_data.py`)
+- Test fixtures (`conftest.py`)
+
+**Why TYPE_CHECKING isn't enough:**
+
+```python
+# In models.py - this is for type hints only
+if TYPE_CHECKING:
+    from features.auth.models import RefreshToken
+
+# At runtime, TYPE_CHECKING is False, so RefreshToken isn't imported
+# String reference "RefreshToken" in relationship() will fail
+```
+
+**Rule:** If models have relationships, import them at entry points (not just in TYPE_CHECKING blocks)
+
 ---
 
 ## Flutter Client Patterns
@@ -368,6 +406,19 @@ when(mockService.createUser(
 
 ## Change Log (Recent)
 
+### 2025-11-19: Service Layer Architecture Enforcement
+- **Fixed:** `setup_all.py` script violated service layer pattern by directly instantiating models
+- **Problem:** Script bypassed UserService, CompanyService, ProductService → missed validation, normalization, and field updates
+- **Impact:** When User model added required `name` field, script broke with `NOT NULL constraint failed`
+- **Solution:** Refactored all 4 functions to use service layer:
+  - `create_admin()` → Uses `UserService.create_user()`
+  - `seed_companies()` → Uses `CompanyService.create_company()`
+  - `seed_users()` → Uses `UserService.create_user()`
+  - `seed_products()` → Uses `ProductService.create_product()`
+- **Why it matters:** Service layer handles phone normalization, password hashing, validation, and future field additions
+- **Rule reinforced:** ALL business logic through services - NEVER bypass (routes/scripts → services → repos → DB)
+- **Documentation:** Added SQLAlchemy Relationship Resolution pattern (section 7)
+
 ### 2025-11-19: Mockito Null Safety Pattern
 - **Fixed:** Flutter test compilation errors in `user_provider_test.mocks.dart`
 - **Pattern:** Mock parameters must be nullable (`String?`) to accept Mockito matchers, even when real service has non-nullable required parameters
@@ -443,4 +494,4 @@ when(mockService.createUser(
 
 ---
 
-**Last Updated:** 2025-11-19 (Mockito null safety pattern + User model migration + core modules)
+**Last Updated:** 2025-11-19 (Service layer architecture enforcement + SQLAlchemy relationship resolution)

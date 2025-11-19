@@ -22,6 +22,7 @@ from features.users.repository import UserRepository
 from features.users.service import UserService
 from core.enums import UserRole
 from core.exceptions import PhoneAlreadyExistsException
+from features.auth.models import RefreshToken  # Required for SQLAlchemy relationship resolution
 
 
 # Hardcoded credentials
