@@ -86,8 +86,12 @@ class UserRepository:
 
     async def get_all(self, skip: int = 0, limit: int = 100) -> list[User]:
         """Get all users (system admin only)."""
+        from sqlalchemy.orm import selectinload
         result = await self.db.execute(
-            select(User).offset(skip).limit(limit)
+            select(User)
+            .options(selectinload(User.company))  # Eagerly load company for permission calculation
+            .offset(skip)
+            .limit(limit)
         )
         return list(result.scalars().all())
 

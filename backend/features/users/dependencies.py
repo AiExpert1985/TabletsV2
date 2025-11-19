@@ -2,7 +2,6 @@
 from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.features.auth.schemas import UserResponse
 from core.dependencies import get_db
 from features.auth.models import User
 from features.users.repository import UserRepository
