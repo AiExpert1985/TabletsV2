@@ -8,6 +8,20 @@
 
 ---
 
+## Quick Reference
+
+| Category | Key Info |
+|----------|----------|
+| **Architecture** | 3-layer: Routes → Services → Repositories → Database |
+| **Features** | auth, users, company, product, authorization, audit |
+| **Auth** | Phone-first (+964), JWT, single refresh token per user |
+| **Authorization** | Single-role RBAC (7 roles, 36 permissions) |
+| **Multi-tenancy** | Single DB + company_id filtering via CompanyContext |
+| **Testing** | 169 backend tests, 95+ client (100% pass rate) |
+| **Database** | SQLite (dev), PostgreSQL (prod), async SQLAlchemy 2.0 |
+
+---
+
 ## Overview
 
 **Multi-tenant ERP system** - FastAPI backend + Flutter client, following pragmatic clean architecture.
@@ -81,110 +95,60 @@ features/{feature_name}/
 - ✅ No public signup - admin CLI only (`scripts/db/create_admin.py`)
 - ✅ Phone numbers = unique identifiers
 
-### Authorization - Single-Role System
+### Authorization - Single-Role RBAC
 
-**Design:** Each user has ONE role that maps to a permission set.
+**Design:** Each user has ONE role → ONE permission set (simpler than dual-role, easier to maintain)
 
-**Roles (UserRole enum):**
-- `system_admin` - Full access to all companies
-- `company_admin` - Full access within their company
-- `accountant` - Financial operations & reports
-- `sales_manager` - Manage sales & salespeople
-- `warehouse_keeper` - Inventory & warehouse operations
-- `salesperson` - Create invoices, view products
-- `viewer` - Read-only access
+**Roles:** `system_admin`, `company_admin`, `accountant`, `sales_manager`, `warehouse_keeper`, `salesperson`, `viewer`
 
-**Why Single-Role:**
-- ✅ Simpler than dual-role (system_role + company_roles)
-- ✅ Easier to explain to clients
-- ✅ Less complex to test and maintain
-- ✅ Direct mapping: 1 role = 1 permission set
-
-**Permission-Based Access Control:**
+**Usage Pattern:**
 ```python
-# In routes/services - declarative permission checks
 from features.authorization.permission_checker import require_permission
 from features.authorization.permissions import Permission
 
+# Declarative permission checks in routes/services
 require_permission(current_user, Permission.CREATE_PRODUCTS)
 require_permission(current_user, Permission.CREATE_PRODUCTS, company_id=product.company_id)
 ```
 
-**Available Functions:**
-- `require_permission(user, perm, company_id?)` - Main authorization check
-- `require_any_permission(user, [perms], company_id?)` - OR logic
-- `require_all_permissions(user, [perms], company_id?)` - AND logic
-- `require_system_admin(user)` - System admin only
-- `require_company_admin(user)` - Admin only (system or company)
+**Available Functions:** `require_permission()`, `require_any_permission()`, `require_all_permissions()`, `require_system_admin()`, `require_company_admin()`
 
-**Security Checks (CRITICAL):**
-1. ✅ **Inactive users** cannot login or pass any permission checks
-2. ✅ **Inactive companies** - all employees cannot login or pass permissions
-3. ✅ Checks enforced in both `AuthService.login()` and `AuthorizationService._calculate_permissions()`
-4. ✅ Company relationship eagerly loaded for status validation
+**Critical Security Checks:**
+- ✅ Inactive users → Cannot login or pass permission checks
+- ✅ Inactive companies → All employees blocked from login/permissions
+- ✅ Company relationship eagerly loaded (prevents N+1, enables status validation)
 
-**Benefits:**
-- Self-documenting - clear what permission each endpoint needs
-- Centralized logic - all authorization in one place
-- Easy testing - test permission checker once, not role combinations
-- Future-proof - can migrate to dynamic roles without changing endpoints
-
-**Location:** `features/authorization/`
-- `permissions.py` - Permission enum + PermissionGroups
-- `role_permissions.py` - Role → Permission mappings (hardcoded)
-- `permission_checker.py` - Authorization functions
-- `service.py` - AuthorizationService (permission calculation)
+**Location:** `features/authorization/` (permissions.py, role_permissions.py, permission_checker.py, service.py)
 
 ---
 
 ## Audit Trail System
 
-**Purpose:** Track all CRUD operations across entities for compliance, security, and troubleshooting
+**Purpose:** Track all CRUD operations for compliance, security, and troubleshooting
 
-### Architecture
-
-**Single Table Approach:**
-- One `audit_logs` table stores all change history
-- No audit fields on entities (simpler, complete history survives deletions)
-- Tracks CREATE, UPDATE, DELETE operations
+**Architecture:** Single `audit_logs` table (no audit fields on entities - simpler, survives deletions)
 
 **What's Tracked:**
-- WHO: user_id, username (cached), user_role
+- WHO: user_id, username (`user.phone_number`), user_role
 - WHEN: timestamp (UTC, indexed)
-- WHERE: company_id, company_name (cached for multi-tenancy)
-- WHAT: entity_type, entity_id, action
+- WHERE: company_id, company_name (cached)
+- WHAT: entity_type, entity_id, action (CREATE/UPDATE/DELETE)
 - DETAILS: old_values, new_values, computed changes (JSON)
 
-### Key Features
+**Key Features:**
+- Auto-filters sensitive data (passwords, tokens, secrets)
+- Computes field-level changes for UPDATE actions
+- Multi-tenancy aware (company admins see only their logs)
+- Indexed for performance: `(company_id, timestamp)`, `(entity_type, entity_id)`
 
-**Sensitive Data Filtering:**
-- Automatically removes passwords, tokens, secrets from audit logs
-- Fields filtered: `password`, `hashed_password`, `password_hash`, `token`, `secret`, `api_key`
-- Applied to all audit log entries (create, update, delete)
-
-**Change Detection:**
-- UPDATE actions include computed `changes` field
-- Format: `{field: {old: value, new: value}}`
-- Only changed fields included (simplifies UI display)
-
-**Multi-Tenancy Support:**
-- Company logs automatically filtered for company admins
-- System admin sees all logs across companies
-- Indexed queries: `(company_id, timestamp)` and `(entity_type, entity_id)`
-
-### Integration Pattern
-
-**Service Layer Integration** (Manual & Explicit):
+**Integration Pattern (Manual & Explicit):**
 ```python
 class UserService:
     def __init__(self, repo: UserRepository, audit: AuditService):
-        self.repo = repo
-        self.audit = audit
+        self.repo, self.audit = repo, audit
 
     async def create_user(..., current_user: User):
         user = await self.repo.save(...)
-
-        # Log creation
         if self.audit:
             await self.audit.log_create(
                 user=current_user,
@@ -196,66 +160,13 @@ class UserService:
         return user
 ```
 
-**Required for ALL entity services:**
-- UserService ✅ (integrated)
-- CompanyService (pending)
-- ProductService (pending)
-- Future services (Invoice, Purchase, etc.)
+**Integration Status:** UserService ✅ | CompanyService ⏳ | ProductService ⏳
 
-### API Endpoints
+**API Endpoints:**
+- `GET /api/audit-logs` - Global audit log (admin only, filterable)
+- `GET /api/audit-logs/{entity_type}/{entity_id}` - Entity history (all users)
 
-**1. Global Audit Log** (`GET /api/audit-logs`):
-- For admin audit screen
-- Permissions: system_admin, company_admin only
-- Filters: company, entity_type, user, action, date range
-- Auto-filtered by company for company admins
-
-**2. Entity History** (`GET /api/audit-logs/{entity_type}/{entity_id}`):
-- For "History" button on entity screens
-- Accessible to all users (if they can view the entity)
-- Shows complete change history for specific entity
-- Multi-tenancy enforced (can't see other company entities)
-
-### Permissions
-
-- `Permission.VIEW_AUDIT_LOGS` - Required for global audit screen
-- Assigned to: system_admin, company_admin
-- Entity history: Uses normal entity view permissions
-
-### UI Integration Points
-
-**Global Audit Screen** (Admin only):
-- Route: `/audit-logs`
-- Visible to: system_admin, company_admin
-- Features: Date filters, entity type filter, user filter, pagination
-
-**History Button** (All screens):
-- Add to: User list/detail, Product list/detail, Company list/detail, etc.
-- Component: `AuditHistoryButton` or dialog trigger
-- Shows: Timeline of changes with user/timestamp
-
-### Testing
-
-**Backend Tests:** ~40 tests covering:
-- Repository: CRUD, filtering, pagination, multi-tenancy
-- Service: Sensitive field filtering, change detection, access control
-- Routes: Permissions, multi-tenancy enforcement, filters
-
-**Test Location:** `backend/tests/test_audit_*`
-
-### Known Limitations
-
-- Login/logout NOT tracked (focused on business data only)
-- Audit logging can be bypassed if service.audit_service is None
-- No retention policy (logs kept indefinitely)
-
-**Location:** `features/audit/`
-- `models.py` - AuditLog model, AuditAction constants
-- `repository.py` - Data access with filtered queries
-- `service.py` - Business logic (logging, filtering, access control)
-- `routes.py` - HTTP endpoints (global log, entity history)
-- `schemas.py` - Request/response DTOs
-- `dependencies.py` - FastAPI dependencies
+**Location:** `features/audit/` | **Tests:** ~40 tests in `backend/tests/test_audit_*`
 
 ---
 
@@ -360,78 +271,40 @@ enum AuthStatus { loading, authenticated }
 
 ---
 
-## Change Log (Key Decisions)
+## Change Log (Recent Decisions)
+
+### 2025-11-19: User Management UI & Audit Trail Fixes
+- **UI:** Implemented create/edit user dialogs (FloatingActionButton + Edit menu item, full form validation)
+- **Bug Fix:** Fixed `user.name` → `user.phone_number` in audit/service.py (3 occurrences)
+- **Pattern:** Eager loading with `selectinload(User.company)` prevents MissingGreenlet errors
+- **Files:** `user_management_screen.dart`, `audit/service.py`
 
 ### 2025-11-18: Audit Trail System
-- **Change:** Added comprehensive audit trail for tracking all CRUD operations
-- **Why:** Compliance, security, troubleshooting - track who did what and when
-- **Implementation:**
-  - Single `audit_logs` table with full change history
-  - Tracks CREATE, UPDATE, DELETE operations (login/logout excluded)
-  - Automatic sensitive data filtering (passwords, tokens removed)
-  - Multi-tenancy support (company admins see only their logs)
-  - Two API endpoints: global audit log (admins) + entity history (all users)
-- **Integration:**
-  - UserService integrated with audit logging ✅
-  - CompanyService, ProductService pending
-  - Pattern: Manual, explicit calls in service methods
-- **Tests:** 40+ tests (repository, service, routes) covering filtering, permissions, multi-tenancy
-- **Benefits:** Complete audit history, survives entity deletions, simple single-table design
+- **Added:** Comprehensive audit trail (single table, CREATE/UPDATE/DELETE tracking)
+- **Features:** Sensitive data filtering, field-level changes, multi-tenancy, 2 API endpoints
+- **Integration:** UserService ✅ | CompanyService ⏳ | ProductService ⏳
+- **Tests:** ~40 tests covering repository, service, routes
 
-### 2025-11-18: Single-Role System Migration
-- **Change:** Removed dual-role system (system_role + company_roles), replaced with single `role` field
-- **Why:** Simpler to understand, test, and explain to clients; reduced complexity
-- **Migration:** Expanded UserRole enum with all role types (ACCOUNTANT, SALES_MANAGER, WAREHOUSE_KEEPER, SALESPERSON, VIEWER)
-- **Impact:**
-  - Backend: Updated User model, AuthorizationService, all tests (169 passing)
-  - Frontend: Updated User entity, UserModel, all tests, added UserRole constants
-  - Database: Removed company_roles column, updated seed data
-- **Benefits:** Direct 1:1 mapping (role → permission set), easier maintenance
-
-### 2025-11-18: Security Checks for Inactive Users/Companies
-- **Change:** Added security checks for inactive users and inactive companies
-- **Why:** Critical security requirement to prevent access from deactivated accounts
-- **Implementation:**
-  - Login blocks inactive users and users from inactive companies
-  - Permission system returns empty set for inactive users/companies
-  - Company relationship eagerly loaded for efficient status checks
-- **Tests:** Added comprehensive tests for both scenarios (all passing)
+### 2025-11-18: Single-Role RBAC Migration
+- **Changed:** Dual-role → Single role field (simpler, 1:1 mapping)
+- **Impact:** Expanded UserRole enum, updated backend/frontend, removed company_roles column
+- **Benefits:** Easier to understand, test, and maintain
 
 ### 2025-11-18: Permission-Based Authorization
-- **Change:** Created centralized `permission_checker.py` for authorization
-- **Why:** Prepare for dynamic roles, make code more maintainable and testable
-- **Pattern:** `require_permission(user, Permission.CREATE_PRODUCTS)` instead of role checks
-- **Benefits:** Self-documenting endpoints, centralized logic, easy testing, future-proof
+- **Pattern:** `require_permission(user, Permission.X)` instead of role checks
+- **Benefits:** Self-documenting, centralized, testable, future-proof for dynamic roles
 
-### 2025-11-18: UserRepository Moved to users/
-- **Change:** Moved `UserRepository` from `auth/repository.py` to `users/repository.py`
-- **Why:** User CRUD belongs with user management, not authentication
-- **Impact:** `auth/` now only has RefreshTokenRepository (authentication-specific)
+### 2025-11-18: Security - Inactive Users/Companies
+- **Added:** Login blocks + permission checks for inactive users/companies
+- **Implementation:** Enforced in AuthService.login() and AuthorizationService
+- **Critical:** Company relationship eagerly loaded for status validation
 
-### 2025-11-18: Auth/Users Feature Split
-- **Change:** Split `features/auth/` into `auth/` (authentication) + `users/` (user management)
-- **Why:** Align with UI (separate screens), clear responsibilities
-- **Pattern:** One feature per business capability
-
-### 2025-11-18: Dependencies Organization
-- **Change:** Centralized all dependencies into `{feature}/dependencies.py`
-- **Why:** Routes should be thin, dependencies reusable
-- **Rule:** Every feature MUST have dependencies.py
-
-### 2025-11-18: Repository Abstractions Removed
-- **Change:** Removed ABC interfaces (IUserRepository, IRefreshTokenRepository, ICompanyRepository)
-- **Why:** YAGNI + Python duck typing handles mocking
-- **Impact:** Simpler, less maintenance overhead
-
-### 2025-11-18: Service Layer Enforcement
-- **Change:** Created UserService, ProductService, CompanyService
-- **Why:** Routes/scripts were bypassing service layer
-- **Rule:** ALL business logic through services (never `User(...); repo.db.add()`)
-
-### Initial: 3-Layer Architecture
-- **Decision:** `routes → services → repositories → database`
-- **Why:** Pragmatic clean architecture (3 layers, not 4)
-- **Trade-off:** Combined service/use-case for faster iteration
+### Key Architectural Decisions
+- **Service Layer:** ALL business logic through services (never bypass)
+- **Feature Split:** auth/ (authentication) + users/ (user CRUD) - one feature per capability
+- **Dependencies:** Every feature MUST have dependencies.py (thin routes)
+- **No Abstractions:** Removed ABC interfaces (YAGNI, duck typing for mocking)
+- **3-Layer Pattern:** Routes → Services → Repositories → Database
 
 ---
 
@@ -453,4 +326,4 @@ enum AuthStatus { loading, authenticated }
 
 ---
 
-**Last Updated:** 2025-11-18 (Single-role system + security checks for inactive users/companies)
+**Last Updated:** 2025-11-19 (User management UI + audit trail fixes)
