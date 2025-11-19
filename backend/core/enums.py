@@ -18,3 +18,17 @@ class UserRole(str, enum.Enum):
     WAREHOUSE_KEEPER = "warehouse_keeper"  # Inventory & warehouse operations
     SALESPERSON = "salesperson"          # Create invoices, view products
     VIEWER = "viewer"                    # Read-only access
+
+
+class AuditAction(str, enum.Enum):
+    """Actions tracked in audit logs."""
+    CREATE = "CREATE"
+    UPDATE = "UPDATE"
+    DELETE = "DELETE"
+
+
+class EntityType(str, enum.Enum):
+    """Entity types tracked in audit logs."""
+    USER = "User"
+    COMPANY = "Company"
+    PRODUCT = "Product"

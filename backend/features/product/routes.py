@@ -143,6 +143,7 @@ async def create_product(
 
         product = await product_service.create_product(
             company_ctx=company_ctx,
+            current_user=company_ctx.user,
             name=request.name,
             sku=request.sku,
             selling_price=request.selling_price,
@@ -190,6 +191,7 @@ async def update_product(
         product = await product_service.update_product(
             product_id=product_id,
             company_ctx=company_ctx,
+            current_user=company_ctx.user,
             name=request.name,
             sku=request.sku,
             description=request.description,
@@ -232,7 +234,11 @@ async def delete_product(
         - 404: Product not found OR belongs to different company
     """
     try:
-        await product_service.delete_product(product_id, company_ctx)
+        await product_service.delete_product(
+            product_id,
+            company_ctx,
+            company_ctx.user
+        )
         logger.info(f"Deleted product {product_id}")
         return None
 

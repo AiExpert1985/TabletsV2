@@ -1,11 +1,16 @@
 """Business logic for product management."""
 from decimal import Decimal
-from typing import Sequence
+from typing import Sequence, TYPE_CHECKING
 from uuid import UUID
 from features.product.models import Product
 from features.product.repository import ProductRepository
 from core.company_context import CompanyContext
 from core.exceptions import AppException
+from core.enums import EntityType
+
+if TYPE_CHECKING:
+    from features.audit.service import AuditService
+    from features.users.models import User
 
 
 class ProductAlreadyExistsException(AppException):
@@ -32,13 +37,20 @@ class ProductService:
     """Product management service - handles business logic for product operations."""
 
     product_repo: ProductRepository
+    audit_service: "AuditService"
 
-    def __init__(self, product_repo: ProductRepository) -> None:
+    def __init__(
+        self,
+        product_repo: ProductRepository,
+        audit_service: "AuditService"
+    ) -> None:
         self.product_repo = product_repo
+        self.audit_service = audit_service
 
     async def create_product(
         self,
         company_ctx: CompanyContext,
+        current_user: "User",
         name: str,
         sku: str,
         selling_price: Decimal,
@@ -60,6 +72,7 @@ class ProductService:
 
         Args:
             company_ctx: Company context for filtering
+            current_user: User performing the creation (for audit logging)
             name: Product name
             sku: Product SKU (unique within company)
             selling_price: Selling price
@@ -104,6 +117,26 @@ class ProductService:
 
         # 4. Save to repository
         product = await self.product_repo.create(product)
+
+        # 5. Log creation
+        await self.audit_service.log_create(
+            user=current_user,
+            entity_type=EntityType.PRODUCT,
+            entity_id=str(product.id),
+            values={
+                "id": str(product.id),
+                "name": product.name,
+                "sku": product.sku,
+                "description": product.description,
+                "cost_price": str(product.cost_price),
+                "selling_price": str(product.selling_price),
+                "stock_quantity": product.stock_quantity,
+                "reorder_level": product.reorder_level,
+                "is_active": product.is_active,
+                "company_id": str(product.company_id),
+            },
+            company_id=str(product.company_id)
+        )
 
         return product
 
@@ -189,6 +222,7 @@ class ProductService:
         self,
         product_id: UUID,
         company_ctx: CompanyContext,
+        current_user: "User",
         name: str | None = None,
         sku: str | None = None,
         description: str | None = None,
@@ -208,6 +242,7 @@ class ProductService:
         Args:
             product_id: Product UUID
             company_ctx: Company context for filtering
+            current_user: User performing the update (for audit logging)
             name: New name (optional)
             sku: New SKU (optional)
             description: New description (optional)
@@ -227,13 +262,27 @@ class ProductService:
         # 1. Get product with company access check
         product = await self.get_product(product_id, company_ctx)
 
-        # 2. Check SKU uniqueness if changing
+        # 2. Capture old values for audit logging
+        old_values = {
+            "id": str(product.id),
+            "name": product.name,
+            "sku": product.sku,
+            "description": product.description,
+            "cost_price": str(product.cost_price),
+            "selling_price": str(product.selling_price),
+            "stock_quantity": product.stock_quantity,
+            "reorder_level": product.reorder_level,
+            "is_active": product.is_active,
+            "company_id": str(product.company_id),
+        }
+
+        # 3. Check SKU uniqueness if changing
         if sku and sku != product.sku:
             existing = await self.product_repo.get_by_sku(sku, company_ctx)
             if existing:
                 raise ProductAlreadyExistsException(sku)
 
-        # 3. Update fields (only if provided)
+        # 4. Update fields (only if provided)
         if name is not None:
             product.name = name
         if sku is not None:
@@ -251,8 +300,29 @@ class ProductService:
         if is_active is not None:
             product.is_active = is_active
 
-        # 4. Save changes
+        # 5. Save changes
         product = await self.product_repo.update(product)
+
+        # 6. Log update with old and new values
+        await self.audit_service.log_update(
+            user=current_user,
+            entity_type=EntityType.PRODUCT,
+            entity_id=str(product.id),
+            old_values=old_values,
+            new_values={
+                "id": str(product.id),
+                "name": product.name,
+                "sku": product.sku,
+                "description": product.description,
+                "cost_price": str(product.cost_price),
+                "selling_price": str(product.selling_price),
+                "stock_quantity": product.stock_quantity,
+                "reorder_level": product.reorder_level,
+                "is_active": product.is_active,
+                "company_id": str(product.company_id),
+            },
+            company_id=str(product.company_id)
+        )
 
         return product
 
@@ -260,6 +330,7 @@ class ProductService:
         self,
         product_id: UUID,
         company_ctx: CompanyContext,
+        current_user: "User",
     ) -> None:
         """
         Delete a product.
@@ -267,6 +338,7 @@ class ProductService:
         Args:
             product_id: Product UUID
             company_ctx: Company context for filtering
+            current_user: User performing the deletion (for audit logging)
 
         Raises:
             ProductNotFoundException: Product not found or not accessible
@@ -274,5 +346,28 @@ class ProductService:
         # Get product with company access check
         product = await self.get_product(product_id, company_ctx)
 
+        # Capture old values for audit logging
+        old_values = {
+            "id": str(product.id),
+            "name": product.name,
+            "sku": product.sku,
+            "description": product.description,
+            "cost_price": str(product.cost_price),
+            "selling_price": str(product.selling_price),
+            "stock_quantity": product.stock_quantity,
+            "reorder_level": product.reorder_level,
+            "is_active": product.is_active,
+            "company_id": str(product.company_id),
+        }
+
         # Delete
         await self.product_repo.delete(product)
+
+        # Log deletion
+        await self.audit_service.log_delete(
+            user=current_user,
+            entity_type=EntityType.PRODUCT,
+            entity_id=str(product.id),
+            values=old_values,
+            company_id=str(product.company_id)
+        )

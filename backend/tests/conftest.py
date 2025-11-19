@@ -14,12 +14,14 @@ from core.enums import UserRole
 from features.auth.models import RefreshToken
 from features.company.models import Company
 from features.product.models import Product
+from features.audit.models import AuditLog
 
 # Import repositories and services
 from features.users.repository import UserRepository
 from features.auth.repository import RefreshTokenRepository
 from features.auth.auth_services import AuthService
 from features.company.repository import CompanyRepository
+from features.audit.repository import AuditLogRepository
 
 
 # ============================================================================
@@ -130,6 +132,12 @@ def refresh_token_repo(db_session: AsyncSession) -> RefreshTokenRepository:
 def company_repo(db_session: AsyncSession) -> CompanyRepository:
     """Create company repository."""
     return CompanyRepository(db_session)
+
+
+@pytest.fixture
+def audit_repo(db_session: AsyncSession) -> AuditLogRepository:
+    """Create audit log repository."""
+    return AuditLogRepository(db_session)
 
 
 # ============================================================================

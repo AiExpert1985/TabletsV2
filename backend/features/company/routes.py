@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.dependencies import get_db
 from features.authorization.dependencies import require_permission
 from features.authorization.permissions import Permission
+from features.auth.dependencies import CurrentUser
 from features.company.schemas import (
     CompanyCreateRequest,
     CompanyUpdateRequest,
@@ -20,6 +21,7 @@ router = APIRouter(prefix="/companies", tags=["Companies"])
 @router.post("", response_model=CompanyResponse, status_code=status.HTTP_201_CREATED)
 async def create_company(
     request: CompanyCreateRequest,
+    current_user: CurrentUser,
     company_service: Annotated[CompanyService, Depends(get_company_service)],
     _: Annotated[None, Depends(require_permission(Permission.CREATE_COMPANIES))],
     db: Annotated[AsyncSession, Depends(get_db)]
@@ -30,7 +32,10 @@ async def create_company(
     - **name**: Company name (unique)
     """
     try:
-        company = await company_service.create_company(name=request.name)
+        company = await company_service.create_company(
+            name=request.name,
+            current_user=current_user
+        )
         await db.commit()
 
         return CompanyResponse(
@@ -105,6 +110,7 @@ async def get_company(
 async def update_company(
     company_id: str,
     request: CompanyUpdateRequest,
+    current_user: CurrentUser,
     company_service: Annotated[CompanyService, Depends(get_company_service)],
     _: Annotated[None, Depends(require_permission(Permission.EDIT_COMPANIES))],
     db: Annotated[AsyncSession, Depends(get_db)]
@@ -119,6 +125,7 @@ async def update_company(
     try:
         updated_company = await company_service.update_company(
             company_id=company_id,
+            current_user=current_user,
             name=request.name,
             is_active=request.is_active,
         )
@@ -148,6 +155,7 @@ async def update_company(
 @router.delete("/{company_id}", response_model=MessageResponse)
 async def delete_company(
     company_id: str,
+    current_user: CurrentUser,
     company_service: Annotated[CompanyService, Depends(get_company_service)],
     _: Annotated[None, Depends(require_permission(Permission.DELETE_COMPANIES))],
     db: Annotated[AsyncSession, Depends(get_db)]
@@ -163,7 +171,7 @@ async def delete_company(
         company_name = company.name
 
         # Delete company
-        await company_service.delete_company(company_id)
+        await company_service.delete_company(company_id, current_user)
         await db.commit()
 
         return MessageResponse(message=f"Company '{company_name}' deleted successfully")
