@@ -44,6 +44,214 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
     }
   }
 
+  Future<void> _showCreateUserDialog() async {
+    final phoneController = TextEditingController();
+    final passwordController = TextEditingController();
+    final emailController = TextEditingController();
+    String selectedRole = 'viewer';
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Create User'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: phoneController,
+                decoration: const InputDecoration(
+                  labelText: 'Phone Number',
+                  hintText: '07701234567',
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email (optional)',
+                ),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: selectedRole,
+                decoration: const InputDecoration(labelText: 'Role'),
+                items: const [
+                  DropdownMenuItem(value: 'viewer', child: Text('Viewer')),
+                  DropdownMenuItem(value: 'salesperson', child: Text('Salesperson')),
+                  DropdownMenuItem(value: 'accountant', child: Text('Accountant')),
+                  DropdownMenuItem(value: 'company_admin', child: Text('Company Admin')),
+                  DropdownMenuItem(value: 'system_admin', child: Text('System Admin')),
+                ],
+                onChanged: (value) {
+                  if (value != null) selectedRole = value;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (phoneController.text.isEmpty || passwordController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Phone and password are required')),
+                );
+                return;
+              }
+              Navigator.pop(context, true);
+            },
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      try {
+        final httpClient = ref.read(httpClientProvider);
+        await httpClient.post(AppConfig.usersEndpoint, data: {
+          'phone_number': phoneController.text,
+          'password': passwordController.text,
+          if (emailController.text.isNotEmpty) 'email': emailController.text,
+          'role': selectedRole,
+          'is_active': true,
+        });
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User created successfully')),
+        );
+        _loadUsers();
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _showEditUserDialog(Map<String, dynamic> user) async {
+    final phoneController = TextEditingController(text: user['phone_number']);
+    final emailController = TextEditingController(text: user['email'] ?? '');
+    final passwordController = TextEditingController();
+    String selectedRole = user['role'] ?? 'viewer';
+    bool isActive = user['is_active'] ?? true;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Edit User'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: phoneController,
+                  decoration: const InputDecoration(labelText: 'Phone Number'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'New Password (leave blank to keep current)',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: emailController,
+                  decoration: const InputDecoration(labelText: 'Email'),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: selectedRole,
+                  decoration: const InputDecoration(labelText: 'Role'),
+                  items: const [
+                    DropdownMenuItem(value: 'viewer', child: Text('Viewer')),
+                    DropdownMenuItem(value: 'salesperson', child: Text('Salesperson')),
+                    DropdownMenuItem(value: 'accountant', child: Text('Accountant')),
+                    DropdownMenuItem(value: 'company_admin', child: Text('Company Admin')),
+                    DropdownMenuItem(value: 'system_admin', child: Text('System Admin')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => selectedRole = value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  title: const Text('Active'),
+                  value: isActive,
+                  onChanged: (value) {
+                    setState(() => isActive = value);
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result == true) {
+      try {
+        final httpClient = ref.read(httpClientProvider);
+        final updateData = <String, dynamic>{
+          if (phoneController.text != user['phone_number'])
+            'phone_number': phoneController.text,
+          if (emailController.text != (user['email'] ?? ''))
+            'email': emailController.text.isEmpty ? null : emailController.text,
+          if (passwordController.text.isNotEmpty)
+            'password': passwordController.text,
+          if (selectedRole != user['role'])
+            'role': selectedRole,
+          if (isActive != user['is_active'])
+            'is_active': isActive,
+        };
+
+        if (updateData.isNotEmpty) {
+          await httpClient.put('${AppConfig.usersEndpoint}/${user['id']}',
+              data: updateData);
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('User updated successfully')),
+          );
+          _loadUsers();
+        }
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _deleteUser(String userId, String phoneNumber) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -159,11 +367,23 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                                     ? const Chip(label: Text('You'))
                                     : PopupMenuButton<String>(
                                         onSelected: (value) {
-                                          if (value == 'delete') {
+                                          if (value == 'edit') {
+                                            _showEditUserDialog(user);
+                                          } else if (value == 'delete') {
                                             _deleteUser(user['id'], user['phone_number']);
                                           }
                                         },
                                         itemBuilder: (context) => [
+                                          const PopupMenuItem(
+                                            value: 'edit',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.edit, color: Colors.blue),
+                                                SizedBox(width: 8),
+                                                Text('Edit'),
+                                              ],
+                                            ),
+                                          ),
                                           const PopupMenuItem(
                                             value: 'delete',
                                             child: Row(
@@ -182,6 +402,11 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                           },
                         ),
                 ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showCreateUserDialog,
+        tooltip: 'Create User',
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }
