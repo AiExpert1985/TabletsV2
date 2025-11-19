@@ -479,7 +479,7 @@ when(mockService.createUser(
 ## AI Assistant Checklist
 
 **Starting a session:**
-1. ✅ Read PROJECT_CONTEXT.md + AI_GUIDELINES.md
+1. ✅ Read PROJECT_CONTEXT.md
 2. ✅ Check "Features" - don't re-implement
 3. ✅ Follow patterns: service layer, single-role, permission-based
 4. ✅ Preserve security (inactive checks, eager loading)
