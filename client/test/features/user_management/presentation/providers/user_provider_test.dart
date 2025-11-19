@@ -130,6 +130,7 @@ void main() {
         )).thenAnswer((_) async => testUser1);
 
         await notifier.createUser(
+          name: 'Test User',
           phoneNumber: '+9647701234567',
           password: 'password123',
           email: 'test1@example.com',
@@ -154,6 +155,7 @@ void main() {
             .thenReturn('Phone number already exists');
 
         await notifier.createUser(
+          name: 'Test User',
           phoneNumber: '+9647701234567',
           password: 'password123',
         );
@@ -173,6 +175,7 @@ void main() {
         )).thenAnswer((_) async => testUser1);
 
         await notifier.createUser(
+          name: 'Test User',
           phoneNumber: '+9647701234567',
           password: 'password123',
           email: 'test@example.com',

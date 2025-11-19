@@ -104,6 +104,7 @@ void main() {
     group('createUser', () {
       test('returns created user on success', () async {
         final dto = UserCreateDto(
+          name: 'Test User',
           phoneNumber: '+9647701234567',
           password: 'password123',
           email: 'test@example.com',
@@ -124,6 +125,7 @@ void main() {
 
       test('rethrows HttpException on conflict', () async {
         final dto = UserCreateDto(
+          name: 'Test User',
           phoneNumber: '+9647701234567',
           password: 'password123',
           role: 'viewer',
