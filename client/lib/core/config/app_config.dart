@@ -8,6 +8,7 @@ class AppConfig {
   static const String authEndpoint = '/api/auth';
   static const String usersEndpoint = '/api/users';
   static const String productsEndpoint = '/api/products';
+  static const String companiesEndpoint = '/api/companies';
 
   /// Timeout durations
   static const Duration connectTimeout = Duration(seconds: 30);

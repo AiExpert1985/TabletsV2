@@ -23,6 +23,7 @@ class UserRepository:
     ) -> User:
         """Create new user with multi-tenancy support."""
         from features.auth.models import UserRole
+        from sqlalchemy.orm import selectinload
         user = User(
             phone_number=phone_number,
             hashed_password=hashed_password,
@@ -31,15 +32,27 @@ class UserRepository:
         )
         self.db.add(user)
         await self.db.flush()
-        await self.db.refresh(user)
-        return user
+        # Eagerly load company relationship to avoid lazy loading issues
+        result = await self.db.execute(
+            select(User)
+            .where(User.id == user.id)
+            .options(selectinload(User.company))
+        )
+        return result.scalar_one()
 
     async def save(self, user: User) -> User:
         """Save user model to database."""
+        from sqlalchemy.orm import selectinload
         self.db.add(user)
         await self.db.flush()
-        await self.db.refresh(user)
-        return user
+        await self.db.refresh(user, attribute_names=['company'])
+        # Eagerly load company relationship to avoid lazy loading issues
+        result = await self.db.execute(
+            select(User)
+            .where(User.id == user.id)
+            .options(selectinload(User.company))
+        )
+        return result.scalar_one()
 
     async def get_by_phone(self, phone_number: str) -> User | None:
         """Get user by phone number."""
@@ -97,9 +110,15 @@ class UserRepository:
 
     async def update(self, user: User) -> User:
         """Update user."""
+        from sqlalchemy.orm import selectinload
         await self.db.flush()
-        await self.db.refresh(user)
-        return user
+        # Eagerly load company relationship to avoid lazy loading issues
+        result = await self.db.execute(
+            select(User)
+            .where(User.id == user.id)
+            .options(selectinload(User.company))
+        )
+        return result.scalar_one()
 
     async def delete(self, user: User) -> None:
         """Delete user."""

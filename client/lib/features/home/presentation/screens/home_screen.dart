@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:client/core/authorization/permission_checker.dart';
+import 'package:client/core/authorization/permissions.dart';
 import 'package:client/features/auth/presentation/providers/auth_provider.dart';
 import 'package:client/features/auth/presentation/providers/auth_state.dart';
 import 'package:client/features/auth/domain/entities/user.dart';
@@ -134,13 +136,13 @@ class AppDrawer extends StatelessWidget {
               context.go('/products');
             },
           ),
-          // Only show User Management for system admin
-          if (user.isSystemAdmin) ...[
+          // Only show User Management if user has permission
+          if (PermissionChecker.hasPermission(user, Permission.viewUsers)) ...[
             const Divider(),
             ListTile(
               leading: const Icon(Icons.admin_panel_settings),
               title: const Text('User Management'),
-              subtitle: const Text('System Admin Only'),
+              subtitle: const Text('Admin Only'),
               onTap: () {
                 Navigator.pop(context);
                 context.go('/user-management');
