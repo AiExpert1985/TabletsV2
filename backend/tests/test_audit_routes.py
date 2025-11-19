@@ -76,7 +76,7 @@ async def regular_user(db_session, test_company):
 
 
 @pytest.fixture
-async def system_admin_token(system_admin_user):
+def system_admin_token(system_admin_user):
     """Create access token for system admin."""
     return create_access_token(
         user_id=str(system_admin_user.id),
@@ -88,7 +88,7 @@ async def system_admin_token(system_admin_user):
 
 
 @pytest.fixture
-async def company_admin_token(company_admin_user):
+def company_admin_token(company_admin_user):
     """Create access token for company admin."""
     return create_access_token(
         user_id=str(company_admin_user.id),
@@ -100,7 +100,7 @@ async def company_admin_token(company_admin_user):
 
 
 @pytest.fixture
-async def regular_user_token(regular_user):
+def regular_user_token(regular_user):
     """Create access token for regular user."""
     return create_access_token(
         user_id=str(regular_user.id),

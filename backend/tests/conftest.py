@@ -220,10 +220,21 @@ def invalid_password() -> str:
 # ============================================================================
 
 @pytest.fixture
-async def async_client() -> AsyncGenerator[AsyncClient, None]:
-    """Create async HTTP client for testing API endpoints."""
+async def async_client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+    """Create async HTTP client for testing API endpoints with shared DB session."""
     from main import app
-    
+    from core.database import get_db
+
+    # Override get_db to use the test's db_session
+    async def override_get_db():
+        yield db_session
+
+    # Set the override before creating the client
+    app.dependency_overrides[get_db] = override_get_db
+
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
+
+    # Clean up after test
+    app.dependency_overrides.clear()
