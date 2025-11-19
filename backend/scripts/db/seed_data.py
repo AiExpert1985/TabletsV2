@@ -30,6 +30,7 @@ from features.users.service import UserService
 from features.product.repository import ProductRepository
 from features.product.service import ProductService
 from core.company_context import CompanyContext
+from features.auth.models import RefreshToken  # Required for SQLAlchemy relationship resolution
 
 
 async def seed_companies(companies_data: list[dict]) -> dict[str, Company]:

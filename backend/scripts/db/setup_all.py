@@ -31,6 +31,7 @@ from core.enums import UserRole
 from features.users.repository import UserRepository
 from features.company.models import Company
 from features.product.models import Product
+from features.auth.models import RefreshToken  # Required for SQLAlchemy relationship resolution
 
 
 # Hardcoded admin credentials
