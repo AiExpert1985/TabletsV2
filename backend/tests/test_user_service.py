@@ -31,6 +31,20 @@ def mock_audit_service():
 
 
 @pytest.fixture
+def mock_current_user():
+    """Create a mock user representing the current logged-in user performing actions."""
+    from uuid import uuid4
+    user = Mock(spec=User)
+    user.id = uuid4()
+    user.name = "Admin User"
+    user.phone_number = "+9647700000000"
+    user.role = UserRole.SYSTEM_ADMIN
+    user.company_id = None
+    user.is_active = True
+    return user
+
+
+@pytest.fixture
 def user_service(mock_user_repo, mock_audit_service):
     """Create UserService with mocked repository and audit service."""
     return UserService(mock_user_repo, mock_audit_service)
@@ -40,7 +54,7 @@ class TestUserService:
     """Test UserService business logic."""
 
     @pytest.mark.asyncio
-    async def test_create_user_success(self, user_service, mock_user_repo):
+    async def test_create_user_success(self, user_service, mock_user_repo, mock_current_user):
         """Create user with valid data succeeds."""
         # Arrange
         mock_user_repo.phone_exists.return_value = False
@@ -54,6 +68,7 @@ class TestUserService:
             password="TestPass123",
             company_id="123e4567-e89b-12d3-a456-426614174000",
             role="viewer",
+            current_user=mock_current_user,
         )
 
         # Assert
@@ -62,7 +77,7 @@ class TestUserService:
         assert user == mock_user
 
     @pytest.mark.asyncio
-    async def test_create_user_phone_exists_raises_exception(self, user_service, mock_user_repo):
+    async def test_create_user_phone_exists_raises_exception(self, user_service, mock_user_repo, mock_current_user):
         """Creating user with existing phone raises PhoneAlreadyExistsException."""
         # Arrange
         mock_user_repo.phone_exists.return_value = True
@@ -75,10 +90,11 @@ class TestUserService:
                 password="TestPass123",
                 company_id="123e4567-e89b-12d3-a456-426614174000",
                 role="viewer",
+                current_user=mock_current_user,
             )
 
     @pytest.mark.asyncio
-    async def test_create_system_admin_with_company_raises_error(self, user_service, mock_user_repo):
+    async def test_create_system_admin_with_company_raises_error(self, user_service, mock_user_repo, mock_current_user):
         """Creating system admin with company_id raises ValueError."""
         # Act & Assert
         with pytest.raises(ValueError, match="System admin cannot have a company_id"):
@@ -88,10 +104,11 @@ class TestUserService:
                 password="TestPass123",
                 company_id="123e4567-e89b-12d3-a456-426614174000",
                 role="system_admin",
+                current_user=mock_current_user,
             )
 
     @pytest.mark.asyncio
-    async def test_create_regular_user_without_company_raises_error(self, user_service, mock_user_repo):
+    async def test_create_regular_user_without_company_raises_error(self, user_service, mock_user_repo, mock_current_user):
         """Creating regular user without company_id raises ValueError."""
         # Act & Assert
         with pytest.raises(ValueError, match="must have a company_id"):
@@ -101,6 +118,7 @@ class TestUserService:
                 password="TestPass123",
                 company_id=None,
                 role="viewer",
+                current_user=mock_current_user,
             )
 
     @pytest.mark.asyncio
@@ -143,7 +161,7 @@ class TestUserService:
         mock_user_repo.get_all.assert_called_once_with(0, 10)
 
     @pytest.mark.asyncio
-    async def test_update_user_password_hashed(self, user_service, mock_user_repo):
+    async def test_update_user_password_hashed(self, user_service, mock_user_repo, mock_current_user):
         """Update user password hashes the password."""
         # Arrange
         mock_user = Mock(spec=User)
@@ -156,6 +174,7 @@ class TestUserService:
         # Act
         await user_service.update_user(
             user_id="123",
+            current_user=mock_current_user,
             password="NewPassword123"
         )
 
@@ -168,12 +187,15 @@ class TestUserService:
     async def test_delete_user_success(self, user_service, mock_user_repo):
         """Delete user calls repository delete."""
         # Arrange
+        from uuid import uuid4
         mock_user = Mock(spec=User)
-        mock_user.id = "123"
+        mock_user.id = uuid4()
+        mock_current_user = Mock(spec=User)
+        mock_current_user.id = uuid4()
         mock_user_repo.get_by_id.return_value = mock_user
 
         # Act
-        await user_service.delete_user("123", "456")
+        await user_service.delete_user(str(mock_user.id), mock_current_user)
 
         # Assert
         mock_user_repo.delete.assert_called_once_with(mock_user)
@@ -181,6 +203,12 @@ class TestUserService:
     @pytest.mark.asyncio
     async def test_delete_user_self_deletion_raises_error(self, user_service, mock_user_repo):
         """Deleting yourself raises ValueError."""
+        # Arrange
+        from uuid import uuid4
+        user_id = uuid4()
+        mock_current_user = Mock(spec=User)
+        mock_current_user.id = user_id
+
         # Act & Assert
         with pytest.raises(ValueError, match="Cannot delete yourself"):
-            await user_service.delete_user("123", "123")
+            await user_service.delete_user(str(user_id), mock_current_user)

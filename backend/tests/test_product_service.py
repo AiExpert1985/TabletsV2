@@ -85,6 +85,7 @@ class TestProductService:
         # Act
         product = await product_service.create_product(
             company_ctx=company_ctx_regular,
+            current_user=company_ctx_regular.user,
             name="Test Product",
             sku="SKU001",
             selling_price=Decimal("100.00"),
@@ -104,6 +105,7 @@ class TestProductService:
         with pytest.raises(ValueError, match="System admin must specify company_id"):
             await product_service.create_product(
                 company_ctx=company_ctx_admin,
+                current_user=company_ctx_admin.user,
                 name="Test Product",
                 sku="SKU001",
                 selling_price=Decimal("100.00"),
@@ -123,6 +125,7 @@ class TestProductService:
         with pytest.raises(ProductAlreadyExistsException):
             await product_service.create_product(
                 company_ctx=company_ctx_regular,
+                current_user=company_ctx_regular.user,
                 name="Test Product",
                 sku="SKU001",
                 selling_price=Decimal("100.00"),
@@ -230,6 +233,7 @@ class TestProductService:
         product = await product_service.update_product(
             product_id=product_id,
             company_ctx=company_ctx_regular,
+            current_user=company_ctx_regular.user,
             name="Updated Name",
             selling_price=Decimal("200.00"),
         )
@@ -257,6 +261,7 @@ class TestProductService:
             await product_service.update_product(
                 product_id=product_id,
                 company_ctx=company_ctx_regular,
+                current_user=company_ctx_regular.user,
                 sku="SKU002",
             )
 
@@ -271,7 +276,7 @@ class TestProductService:
         mock_product_repo.get_by_id_for_company.return_value = mock_product
 
         # Act
-        await product_service.delete_product(product_id, company_ctx_regular)
+        await product_service.delete_product(product_id, company_ctx_regular, company_ctx_regular.user)
 
         # Assert
         mock_product_repo.delete.assert_called_once_with(mock_product)
@@ -287,4 +292,4 @@ class TestProductService:
 
         # Act & Assert
         with pytest.raises(ProductNotFoundException):
-            await product_service.delete_product(product_id, company_ctx_regular)
+            await product_service.delete_product(product_id, company_ctx_regular, company_ctx_regular.user)

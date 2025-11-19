@@ -29,6 +29,22 @@ def mock_audit_service():
 
 
 @pytest.fixture
+def mock_current_user():
+    """Create a mock user representing the current logged-in user performing actions."""
+    from uuid import uuid4
+    from features.users.models import User
+    from core.enums import UserRole
+    user = Mock(spec=User)
+    user.id = uuid4()
+    user.name = "Admin User"
+    user.phone_number = "+9647700000000"
+    user.role = UserRole.SYSTEM_ADMIN
+    user.company_id = None
+    user.is_active = True
+    return user
+
+
+@pytest.fixture
 def company_service(mock_company_repo, mock_audit_service):
     """Create CompanyService with mocked repository and audit service."""
     return CompanyService(mock_company_repo, mock_audit_service)
@@ -38,7 +54,7 @@ class TestCompanyService:
     """Test CompanyService business logic."""
 
     @pytest.mark.asyncio
-    async def test_create_company_success(self, company_service, mock_company_repo):
+    async def test_create_company_success(self, company_service, mock_company_repo, mock_current_user):
         """Create company with unique name succeeds."""
         # Arrange
         mock_company = Mock(spec=Company)
@@ -47,7 +63,7 @@ class TestCompanyService:
         mock_company_repo.create.return_value = mock_company
 
         # Act
-        company = await company_service.create_company("Test Company")
+        company = await company_service.create_company("Test Company", mock_current_user)
 
         # Assert
         assert company == mock_company
@@ -56,7 +72,7 @@ class TestCompanyService:
 
     @pytest.mark.asyncio
     async def test_create_company_duplicate_name_raises_exception(
-        self, company_service, mock_company_repo
+        self, company_service, mock_company_repo, mock_current_user
     ):
         """Creating company with existing name raises CompanyAlreadyExistsException."""
         # Arrange
@@ -65,7 +81,7 @@ class TestCompanyService:
 
         # Act & Assert
         with pytest.raises(CompanyAlreadyExistsException):
-            await company_service.create_company("Existing Company")
+            await company_service.create_company("Existing Company", mock_current_user)
 
     @pytest.mark.asyncio
     async def test_get_company_success(self, company_service, mock_company_repo):
@@ -110,7 +126,7 @@ class TestCompanyService:
 
     @pytest.mark.asyncio
     async def test_update_company_name_success(
-        self, company_service, mock_company_repo
+        self, company_service, mock_company_repo, mock_current_user
     ):
         """Update company name succeeds."""
         # Arrange
@@ -127,6 +143,7 @@ class TestCompanyService:
         # Act
         company = await company_service.update_company(
             company_id="123",
+            current_user=mock_current_user,
             name="New Name",
         )
 
@@ -137,7 +154,7 @@ class TestCompanyService:
 
     @pytest.mark.asyncio
     async def test_update_company_duplicate_name_raises_exception(
-        self, company_service, mock_company_repo
+        self, company_service, mock_company_repo, mock_current_user
     ):
         """Updating company to existing name raises exception."""
         # Arrange
@@ -153,12 +170,13 @@ class TestCompanyService:
         with pytest.raises(CompanyAlreadyExistsException):
             await company_service.update_company(
                 company_id="123",
+                current_user=mock_current_user,
                 name="Existing Name",
             )
 
     @pytest.mark.asyncio
     async def test_update_company_not_found_raises_exception(
-        self, company_service, mock_company_repo
+        self, company_service, mock_company_repo, mock_current_user
     ):
         """Update non-existent company raises CompanyNotFoundException."""
         # Arrange
@@ -168,12 +186,13 @@ class TestCompanyService:
         with pytest.raises(CompanyNotFoundException):
             await company_service.update_company(
                 company_id="invalid-id",
+                current_user=mock_current_user,
                 name="New Name",
             )
 
     @pytest.mark.asyncio
     async def test_update_company_is_active(
-        self, company_service, mock_company_repo
+        self, company_service, mock_company_repo, mock_current_user
     ):
         """Update company active status."""
         # Arrange
@@ -188,6 +207,7 @@ class TestCompanyService:
         # Act
         company = await company_service.update_company(
             company_id="123",
+            current_user=mock_current_user,
             is_active=False,
         )
 
@@ -201,7 +221,7 @@ class TestCompanyService:
 
     @pytest.mark.asyncio
     async def test_delete_company_success(
-        self, company_service, mock_company_repo
+        self, company_service, mock_company_repo, mock_current_user
     ):
         """Delete company calls repository delete."""
         # Arrange
@@ -211,14 +231,14 @@ class TestCompanyService:
         mock_company_repo.delete.return_value = True
 
         # Act
-        await company_service.delete_company("123")
+        await company_service.delete_company("123", mock_current_user)
 
         # Assert
         mock_company_repo.delete.assert_called_once_with("123")
 
     @pytest.mark.asyncio
     async def test_delete_company_not_found_raises_exception(
-        self, company_service, mock_company_repo
+        self, company_service, mock_company_repo, mock_current_user
     ):
         """Delete non-existent company raises CompanyNotFoundException."""
         # Arrange
@@ -226,11 +246,11 @@ class TestCompanyService:
 
         # Act & Assert
         with pytest.raises(CompanyNotFoundException):
-            await company_service.delete_company("invalid-id")
+            await company_service.delete_company("invalid-id", mock_current_user)
 
     @pytest.mark.asyncio
     async def test_delete_company_failure_raises_exception(
-        self, company_service, mock_company_repo
+        self, company_service, mock_company_repo, mock_current_user
     ):
         """Delete company that fails to delete raises CompanyNotFoundException."""
         # Arrange
@@ -241,4 +261,4 @@ class TestCompanyService:
 
         # Act & Assert
         with pytest.raises(CompanyNotFoundException):
-            await company_service.delete_company("123")
+            await company_service.delete_company("123", mock_current_user)
