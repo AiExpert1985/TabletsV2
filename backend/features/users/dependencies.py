@@ -8,15 +8,18 @@ from features.auth.models import User
 from features.users.repository import UserRepository
 from features.auth.dependencies import CurrentUser
 from features.users.service import UserService
+from features.audit.dependencies import get_audit_service
+from features.audit.service import AuditService
 from features.authorization.permission_checker import require_system_admin as check_system_admin
 
 
 async def get_user_service(
-    db: Annotated[AsyncSession, Depends(get_db)]
+    db: Annotated[AsyncSession, Depends(get_db)],
+    audit_service: Annotated[AuditService, Depends(get_audit_service)],
 ) -> UserService:
     """Get user service."""
     user_repo = UserRepository(db)
-    return UserService(user_repo)
+    return UserService(user_repo, audit_service)
 
 
 async def require_system_admin(current_user: CurrentUser) -> None:

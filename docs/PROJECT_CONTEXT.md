@@ -51,6 +51,7 @@ features/{feature_name}/
 - `company/` - Company management - admin only
 - `product/` - Product CRUD with multi-tenancy
 - `authorization/` - Single-role permission system (7 roles, 36 permissions)
+- `audit/` - Comprehensive audit trail for tracking CRUD operations
 
 **Key Rule:** Every feature MUST have `dependencies.py` - never define dependencies in route files
 
@@ -133,6 +134,128 @@ require_permission(current_user, Permission.CREATE_PRODUCTS, company_id=product.
 - `role_permissions.py` - Role → Permission mappings (hardcoded)
 - `permission_checker.py` - Authorization functions
 - `service.py` - AuthorizationService (permission calculation)
+
+---
+
+## Audit Trail System
+
+**Purpose:** Track all CRUD operations across entities for compliance, security, and troubleshooting
+
+### Architecture
+
+**Single Table Approach:**
+- One `audit_logs` table stores all change history
+- No audit fields on entities (simpler, complete history survives deletions)
+- Tracks CREATE, UPDATE, DELETE operations
+
+**What's Tracked:**
+- WHO: user_id, username (cached), user_role
+- WHEN: timestamp (UTC, indexed)
+- WHERE: company_id, company_name (cached for multi-tenancy)
+- WHAT: entity_type, entity_id, action
+- DETAILS: old_values, new_values, computed changes (JSON)
+
+### Key Features
+
+**Sensitive Data Filtering:**
+- Automatically removes passwords, tokens, secrets from audit logs
+- Fields filtered: `password`, `hashed_password`, `password_hash`, `token`, `secret`, `api_key`
+- Applied to all audit log entries (create, update, delete)
+
+**Change Detection:**
+- UPDATE actions include computed `changes` field
+- Format: `{field: {old: value, new: value}}`
+- Only changed fields included (simplifies UI display)
+
+**Multi-Tenancy Support:**
+- Company logs automatically filtered for company admins
+- System admin sees all logs across companies
+- Indexed queries: `(company_id, timestamp)` and `(entity_type, entity_id)`
+
+### Integration Pattern
+
+**Service Layer Integration** (Manual & Explicit):
+```python
+class UserService:
+    def __init__(self, repo: UserRepository, audit: AuditService):
+        self.repo = repo
+        self.audit = audit
+
+    async def create_user(..., current_user: User):
+        user = await self.repo.save(...)
+
+        # Log creation
+        if self.audit:
+            await self.audit.log_create(
+                user=current_user,
+                entity_type="User",
+                entity_id=str(user.id),
+                values=user.dict(),
+                company_id=user.company_id,
+            )
+        return user
+```
+
+**Required for ALL entity services:**
+- UserService ✅ (integrated)
+- CompanyService (pending)
+- ProductService (pending)
+- Future services (Invoice, Purchase, etc.)
+
+### API Endpoints
+
+**1. Global Audit Log** (`GET /api/audit-logs`):
+- For admin audit screen
+- Permissions: system_admin, company_admin only
+- Filters: company, entity_type, user, action, date range
+- Auto-filtered by company for company admins
+
+**2. Entity History** (`GET /api/audit-logs/{entity_type}/{entity_id}`):
+- For "History" button on entity screens
+- Accessible to all users (if they can view the entity)
+- Shows complete change history for specific entity
+- Multi-tenancy enforced (can't see other company entities)
+
+### Permissions
+
+- `Permission.VIEW_AUDIT_LOGS` - Required for global audit screen
+- Assigned to: system_admin, company_admin
+- Entity history: Uses normal entity view permissions
+
+### UI Integration Points
+
+**Global Audit Screen** (Admin only):
+- Route: `/audit-logs`
+- Visible to: system_admin, company_admin
+- Features: Date filters, entity type filter, user filter, pagination
+
+**History Button** (All screens):
+- Add to: User list/detail, Product list/detail, Company list/detail, etc.
+- Component: `AuditHistoryButton` or dialog trigger
+- Shows: Timeline of changes with user/timestamp
+
+### Testing
+
+**Backend Tests:** ~40 tests covering:
+- Repository: CRUD, filtering, pagination, multi-tenancy
+- Service: Sensitive field filtering, change detection, access control
+- Routes: Permissions, multi-tenancy enforcement, filters
+
+**Test Location:** `backend/tests/test_audit_*`
+
+### Known Limitations
+
+- Login/logout NOT tracked (focused on business data only)
+- Audit logging can be bypassed if service.audit_service is None
+- No retention policy (logs kept indefinitely)
+
+**Location:** `features/audit/`
+- `models.py` - AuditLog model, AuditAction constants
+- `repository.py` - Data access with filtered queries
+- `service.py` - Business logic (logging, filtering, access control)
+- `routes.py` - HTTP endpoints (global log, entity history)
+- `schemas.py` - Request/response DTOs
+- `dependencies.py` - FastAPI dependencies
 
 ---
 
@@ -238,6 +361,22 @@ enum AuthStatus { loading, authenticated }
 ---
 
 ## Change Log (Key Decisions)
+
+### 2025-11-18: Audit Trail System
+- **Change:** Added comprehensive audit trail for tracking all CRUD operations
+- **Why:** Compliance, security, troubleshooting - track who did what and when
+- **Implementation:**
+  - Single `audit_logs` table with full change history
+  - Tracks CREATE, UPDATE, DELETE operations (login/logout excluded)
+  - Automatic sensitive data filtering (passwords, tokens removed)
+  - Multi-tenancy support (company admins see only their logs)
+  - Two API endpoints: global audit log (admins) + entity history (all users)
+- **Integration:**
+  - UserService integrated with audit logging ✅
+  - CompanyService, ProductService pending
+  - Pattern: Manual, explicit calls in service methods
+- **Tests:** 40+ tests (repository, service, routes) covering filtering, permissions, multi-tenancy
+- **Benefits:** Complete audit history, survives entity deletions, simple single-table design
 
 ### 2025-11-18: Single-Role System Migration
 - **Change:** Removed dual-role system (system_role + company_roles), replaced with single `role` field

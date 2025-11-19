@@ -12,6 +12,7 @@ from core.security import hash_password
 from features.auth.models import User, UserRole, RefreshToken
 from features.company.models import Company
 from features.product.models import Product
+from features.audit.models import AuditLog
 
 # Import repositories and services
 from features.users.repository import UserRepository
