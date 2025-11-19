@@ -8,6 +8,7 @@ void main() {
 
     final Map<String, dynamic> validJson = {
       'id': '123e4567-e89b-12d3-a456-426614174000',
+      'name': 'Test User',
       'phone_number': '9647701234567',
       'email': 'test@example.com',
       'company_id': '223e4567-e89b-12d3-a456-426614174000',
@@ -38,6 +39,7 @@ void main() {
       test('creates UserModel with null optional fields', () {
         final json = {
           'id': '123e4567-e89b-12d3-a456-426614174000',
+          'name': 'Test User',
           'phone_number': '9647701234567',
           'email': null,
           'company_id': null,
@@ -60,6 +62,7 @@ void main() {
       test('creates UserModel for system admin', () {
         final json = {
           'id': '123e4567-e89b-12d3-a456-426614174000',
+          'name': 'System Admin',
           'phone_number': '9647701234567',
           'email': 'admin@example.com',
           'company_id': null,
@@ -81,6 +84,7 @@ void main() {
       test('handles empty permissions array', () {
         final json = {
           'id': '123e4567-e89b-12d3-a456-426614174000',
+          'name': 'Test User',
           'phone_number': '9647701234567',
           'email': null,
           'company_id': '223e4567-e89b-12d3-a456-426614174000',
