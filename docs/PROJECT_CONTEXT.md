@@ -1,13 +1,5 @@
 # Project Context - TabletsV2 ERP
 
-> **📖 AI Assistant Onboarding**
->
-> Read this + `AI_GUIDELINES.md` at session start:
-> - **AI_GUIDELINES.md** - *How* to work (style, tone, process)
-> - **PROJECT_CONTEXT.md** (this) - *What* exists and *why* (architecture, decisions)
-
----
-
 ## Quick Reference
 
 **Stack:** FastAPI + SQLAlchemy 2.0 (async) + Flutter + Riverpod
