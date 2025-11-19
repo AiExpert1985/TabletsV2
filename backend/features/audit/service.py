@@ -107,7 +107,7 @@ class AuditService:
         audit_log = AuditLog(
             timestamp=datetime.utcnow(),
             user_id=user.id,
-            username=user.name,
+            username=user.phone_number,
             user_role=user.role,
             company_id=company_id,
             company_name=user.company.name if user.company else None,
@@ -154,7 +154,7 @@ class AuditService:
         audit_log = AuditLog(
             timestamp=datetime.utcnow(),
             user_id=user.id,
-            username=user.name,
+            username=user.phone_number,
             user_role=user.role,
             company_id=company_id,
             company_name=user.company.name if user.company else None,
@@ -197,7 +197,7 @@ class AuditService:
         audit_log = AuditLog(
             timestamp=datetime.utcnow(),
             user_id=user.id,
-            username=user.name,
+            username=user.phone_number,
             user_role=user.role,
             company_id=company_id,
             company_name=user.company.name if user.company else None,
