@@ -121,13 +121,13 @@ void main() {
     group('createUser', () {
       test('emits created state on success', () async {
         when(mockService.createUser(
-          name: anyNamed('name'),
-          phoneNumber: anyNamed('phoneNumber'),
-          password: anyNamed('password'),
+          name: argThat(anything, named: 'name'),
+          phoneNumber: argThat(anything, named: 'phoneNumber'),
+          password: argThat(anything, named: 'password'),
           email: anyNamed('email'),
           companyId: anyNamed('companyId'),
-          role: anyNamed('role'),
-          isActive: anyNamed('isActive'),
+          role: argThat(anything, named: 'role'),
+          isActive: argThat(anything, named: 'isActive'),
         )).thenAnswer((_) async => testUser1);
 
         await notifier.createUser(
@@ -145,13 +145,13 @@ void main() {
 
       test('emits error state on conflict', () async {
         when(mockService.createUser(
-          name: anyNamed('name'),
-          phoneNumber: anyNamed('phoneNumber'),
-          password: anyNamed('password'),
+          name: argThat(anything, named: 'name'),
+          phoneNumber: argThat(anything, named: 'phoneNumber'),
+          password: argThat(anything, named: 'password'),
           email: anyNamed('email'),
           companyId: anyNamed('companyId'),
-          role: anyNamed('role'),
-          isActive: anyNamed('isActive'),
+          role: argThat(anything, named: 'role'),
+          isActive: argThat(anything, named: 'isActive'),
         )).thenThrow(HttpException(message: 'Phone number already exists'));
         when(mockService.mapErrorMessage(any))
             .thenReturn('Phone number already exists');
@@ -168,13 +168,13 @@ void main() {
 
       test('creates user with optional fields', () async {
         when(mockService.createUser(
-          name: anyNamed('name'),
-          phoneNumber: anyNamed('phoneNumber'),
-          password: anyNamed('password'),
+          name: argThat(anything, named: 'name'),
+          phoneNumber: argThat(anything, named: 'phoneNumber'),
+          password: argThat(anything, named: 'password'),
           email: anyNamed('email'),
           companyId: anyNamed('companyId'),
-          role: anyNamed('role'),
-          isActive: anyNamed('isActive'),
+          role: argThat(anything, named: 'role'),
+          isActive: argThat(anything, named: 'isActive'),
         )).thenAnswer((_) async => testUser1);
 
         await notifier.createUser(
@@ -202,7 +202,7 @@ void main() {
     group('updateUser', () {
       test('emits updated state on success', () async {
         when(mockService.updateUser(
-          id: anyNamed('id'),
+          id: argThat(anything, named: 'id'),
           name: anyNamed('name'),
           phoneNumber: anyNamed('phoneNumber'),
           email: anyNamed('email'),
@@ -224,7 +224,7 @@ void main() {
 
       test('emits error state when no fields provided', () async {
         when(mockService.updateUser(
-          id: anyNamed('id'),
+          id: argThat(anything, named: 'id'),
           name: anyNamed('name'),
           phoneNumber: anyNamed('phoneNumber'),
           email: anyNamed('email'),
@@ -242,7 +242,7 @@ void main() {
 
       test('emits error state on failure', () async {
         when(mockService.updateUser(
-          id: anyNamed('id'),
+          id: argThat(anything, named: 'id'),
           name: anyNamed('name'),
           phoneNumber: anyNamed('phoneNumber'),
           email: anyNamed('email'),
