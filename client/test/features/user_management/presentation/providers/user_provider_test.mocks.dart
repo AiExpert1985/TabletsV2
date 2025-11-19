@@ -5,6 +5,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i4;
 
+import 'package:client/core/network/http_exception.dart' as _i7;
 import 'package:client/features/auth/domain/entities/user.dart' as _i2;
 import 'package:client/features/user_management/data/models/user_create_dto.dart'
     as _i5;
@@ -12,6 +13,8 @@ import 'package:client/features/user_management/data/models/user_update_dto.dart
     as _i6;
 import 'package:client/features/user_management/domain/repositories/user_repository.dart'
     as _i3;
+import 'package:client/features/user_management/domain/services/user_service.dart'
+    as _i8;
 import 'package:mockito/mockito.dart' as _i1;
 
 // ignore_for_file: type=lint
@@ -88,4 +91,98 @@ class MockUserRepository extends _i1.Mock implements _i3.UserRepository {
             returnValueForMissingStub: _i4.Future<void>.value(),
           )
           as _i4.Future<void>);
+}
+
+/// A class which mocks [UserService].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockUserService extends _i1.Mock implements _i8.UserService {
+  MockUserService() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i4.Future<List<_i2.User>> getUsers({int? skip = 0, int? limit = 100}) =>
+      (super.noSuchMethod(
+            Invocation.method(#getUsers, [], {#skip: skip, #limit: limit}),
+            returnValue: _i4.Future<List<_i2.User>>.value(<_i2.User>[]),
+          )
+          as _i4.Future<List<_i2.User>>);
+
+  @override
+  _i4.Future<_i2.User> getUserById(String? id) =>
+      (super.noSuchMethod(
+            Invocation.method(#getUserById, [id]),
+            returnValue: _i4.Future<_i2.User>.value(
+              _FakeUser_0(this, Invocation.method(#getUserById, [id])),
+            ),
+          )
+          as _i4.Future<_i2.User>);
+
+  @override
+  _i4.Future<_i2.User> createUser({
+    required String? phoneNumber,
+    required String? password,
+    String? email,
+    String? companyId,
+    String? role = 'viewer',
+    bool? isActive = true,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#createUser, [], {
+              #phoneNumber: phoneNumber,
+              #password: password,
+              #email: email,
+              #companyId: companyId,
+              #role: role,
+              #isActive: isActive,
+            }),
+            returnValue: _i4.Future<_i2.User>.value(
+              _FakeUser_0(this, Invocation.method(#createUser, [])),
+            ),
+          )
+          as _i4.Future<_i2.User>);
+
+  @override
+  _i4.Future<_i2.User> updateUser({
+    required String? id,
+    String? phoneNumber,
+    String? email,
+    String? password,
+    String? companyId,
+    String? role,
+    bool? isActive,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#updateUser, [], {
+              #id: id,
+              #phoneNumber: phoneNumber,
+              #email: email,
+              #password: password,
+              #companyId: companyId,
+              #role: role,
+              #isActive: isActive,
+            }),
+            returnValue: _i4.Future<_i2.User>.value(
+              _FakeUser_0(this, Invocation.method(#updateUser, [])),
+            ),
+          )
+          as _i4.Future<_i2.User>);
+
+  @override
+  _i4.Future<void> deleteUser(String? id) =>
+      (super.noSuchMethod(
+            Invocation.method(#deleteUser, [id]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
+
+  @override
+  String mapErrorMessage(_i7.HttpException? e) =>
+      (super.noSuchMethod(
+            Invocation.method(#mapErrorMessage, [e]),
+            returnValue: '',
+          )
+          as String);
 }
