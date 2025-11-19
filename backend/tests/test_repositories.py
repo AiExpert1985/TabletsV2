@@ -211,7 +211,7 @@ class TestUserRepository:
 
         # Assert
         assert updated_user is not None
-        assert updated_user.is_active is False
+        assert updated_user.is_active is False  # type: ignore[union-attr]
 
     @pytest.mark.asyncio
     async def test_delete_user(
