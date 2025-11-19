@@ -121,6 +121,7 @@ void main() {
     group('createUser', () {
       test('emits created state on success', () async {
         when(mockService.createUser(
+          name: anyNamed('name'),
           phoneNumber: anyNamed('phoneNumber'),
           password: anyNamed('password'),
           email: anyNamed('email'),
@@ -144,6 +145,7 @@ void main() {
 
       test('emits error state on conflict', () async {
         when(mockService.createUser(
+          name: anyNamed('name'),
           phoneNumber: anyNamed('phoneNumber'),
           password: anyNamed('password'),
           email: anyNamed('email'),
@@ -166,6 +168,7 @@ void main() {
 
       test('creates user with optional fields', () async {
         when(mockService.createUser(
+          name: anyNamed('name'),
           phoneNumber: anyNamed('phoneNumber'),
           password: anyNamed('password'),
           email: anyNamed('email'),
@@ -185,6 +188,7 @@ void main() {
         );
 
         verify(mockService.createUser(
+          name: 'Test User',
           phoneNumber: '+9647701234567',
           password: 'password123',
           email: 'test@example.com',
@@ -199,6 +203,7 @@ void main() {
       test('emits updated state on success', () async {
         when(mockService.updateUser(
           id: anyNamed('id'),
+          name: anyNamed('name'),
           phoneNumber: anyNamed('phoneNumber'),
           email: anyNamed('email'),
           password: anyNamed('password'),
@@ -220,6 +225,7 @@ void main() {
       test('emits error state when no fields provided', () async {
         when(mockService.updateUser(
           id: anyNamed('id'),
+          name: anyNamed('name'),
           phoneNumber: anyNamed('phoneNumber'),
           email: anyNamed('email'),
           password: anyNamed('password'),
@@ -237,6 +243,7 @@ void main() {
       test('emits error state on failure', () async {
         when(mockService.updateUser(
           id: anyNamed('id'),
+          name: anyNamed('name'),
           phoneNumber: anyNamed('phoneNumber'),
           email: anyNamed('email'),
           password: anyNamed('password'),
