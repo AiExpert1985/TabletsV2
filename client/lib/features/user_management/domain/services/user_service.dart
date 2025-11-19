@@ -23,6 +23,7 @@ class UserService {
 
   /// Create a new user with validation and normalization
   Future<User> createUser({
+    required String name,
     required String phoneNumber,
     required String password,
     String? email,
@@ -34,6 +35,7 @@ class UserService {
     final normalizedPhone = PhoneValidator.normalize(phoneNumber);
 
     final dto = UserCreateDto(
+      name: name,
       phoneNumber: normalizedPhone,
       password: password,
       email: email,
@@ -48,6 +50,7 @@ class UserService {
   /// Update user with validation and normalization
   Future<User> updateUser({
     required String id,
+    String? name,
     String? phoneNumber,
     String? email,
     String? password,
@@ -61,6 +64,7 @@ class UserService {
         : null;
 
     final dto = UserUpdateDto(
+      name: name,
       phoneNumber: normalizedPhone,
       email: email,
       password: password,
